@@ -48,10 +48,12 @@ class Board:
             self.description.create_text(x_place, y_place, text=text, fill=color, font=str(size))
 
         for i in range(1, 9):
-            create_line_description(str(i), 'white', 20, 25, 100 * i + 10)
-            create_line_description(str(i), 'white', 20, 875, 100 * i + 10)
             create_line_description(alphabet[i - 1], 'white', 20, 100 * i + 10, 25)
             create_line_description(alphabet[i - 1], 'white', 20, 100 * i + 10, 875)
+
+        for i in range(1, 9)[::-1]:
+            create_line_description(str(i), 'white', 20, 25, 910 - 100 * i)
+            create_line_description(str(i), 'white', 20, 875, 910 - 100 * i)
 
     def piece_move(self):
 
