@@ -1,4 +1,15 @@
 from tkinter import *
+from PIL import Image, ImageTk
+
+
+class Piece:
+    def __init__(self, name):
+        self.name = name
+        self.image = ImageTk.PhotoImage(Image.open("pieces/{}.png".format(name)))
+        self.position = None
+
+    def representation(self):
+        return self.image
 
 
 class Board:
@@ -7,9 +18,15 @@ class Board:
         self.env.geometry('1000x1000')
         self.env.configure(bg='black')
         self.board = None
+        self.description = None
+        self.white_king = Piece('white_king')
         self.drawing_board()
+        self.piece_move()
+        self.obraz = None
 
     def drawing_board(self):
+        self.description = Canvas(self.env, bg='black', width=900, height=900)
+        self.description.place(x=50, y=50)
         self.board = Canvas(self.env, bg='#e68a00', width=800, height=800)
         self.board.place(x=100, y=100)
 
@@ -25,10 +42,30 @@ class Board:
                 else:
                     create_field('#ffd699', (200 * x) + 100, 100 * y)
 
+        alphabet = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
+
+        def create_line_description(text, color, size, x_place, y_place):
+            self.description.create_text(x_place, y_place, text=text, fill=color, font=str(size))
+
+        for i in range(1, 9):
+            create_line_description(str(i), 'white', 20, 25, 100 * i + 10)
+            create_line_description(str(i), 'white', 20, 875, 100 * i + 10)
+            create_line_description(alphabet[i - 1], 'white', 20, 100 * i + 10, 25)
+            create_line_description(alphabet[i - 1], 'white', 20, 100 * i + 10, 875)
+
+    def piece_move(self):
+
+        self.obraz = self.board.create_image(50, 50, image=self.white_king.representation(), tag='wK')
+
+    def move(self, event):
+        self.board.move('wK', 10, 10)
 
     def display(self):
+        self.board.bind('<1>', self.move)
         self.env.mainloop()
+
 
 
 board = Board(Tk())
 board.display()
+
