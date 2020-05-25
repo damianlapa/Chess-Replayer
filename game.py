@@ -24,7 +24,8 @@ class ChessBoard:
                         line += '{} '.format(field_piece.shortcut)
 
                 if x == 7:
-                    print(line)
+                    pass
+                    # print(line)
 
 
 class ChessPiece:
@@ -89,9 +90,44 @@ class NewGame:
         for step in steps:
             for move in step.split():
                 self.game_moves.append(move)
-        print(self.game_moves)
     # separating steps
     # code moves for every text in moves history
+
+    def game_moves_all(self):
+        # black or white moves
+        for i in range(0, len(self.game_moves)):
+            if i % 2 == 0:
+                color = 'white'
+            else:
+                color = 'black'
+            # pawn move
+            if re.fullmatch(r'[a-z]\d', self.game_moves[i]):
+                print('{} pawn move [{}]({})'.format(color, self.game_moves[i], i))
+            # rook move
+            if re.fullmatch(r'R[a-z]\d', self.game_moves[i]):
+                print('{} rook move [{}]({})'.format(color, self.game_moves[i], i))
+            # knight move
+            if re.fullmatch(r'N[a-z]\d', self.game_moves[i]):
+                print('{} knight move [{}]({})'.format(color, self.game_moves[i], i))
+            # bishop move
+            if re.fullmatch(r'B[a-z]\d', self.game_moves[i]):
+                print('{} bishop move [{}]({})'.format(color, self.game_moves[i], i))
+            # queen move
+            if re.fullmatch(r'Q[a-z]\d', self.game_moves[i]):
+                print('{} queen move [{}]({})'.format(color, self.game_moves[i], i))
+            # king move
+            if re.fullmatch(r'K[a-z]\d', self.game_moves[i]):
+                print('{} king move [{}]({})'.format(color, self.game_moves[i], i))
+            if self.game_moves[i] == 'O-O':
+                print('{} short castle [{}]({})'.format(color, self.game_moves[i], i))
+            if self.game_moves[i] == 'O-O-O':
+                print('{} long castle [{}]({})'.format(color, self.game_moves[i], i))
+            if re.fullmatch(r'[a-z|A-Z]x[a-z]\d', self.game_moves[i]):
+                print('{} XXX [{}]({})'.format(color, self.game_moves[i], i))
+            if re.fullmatch(r'[a-z|A-Z][abcdefgh][a-z]\d', self.game_moves[i]):
+                print('{} two possible figures [{}]({})'.format(color, self.game_moves[i], i))
+            if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', self.game_moves[i]):
+                print('{} two possible figures XXX [{}]({})'.format(color, self.game_moves[i], i))
 
 game_text = '''
 1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
@@ -106,6 +142,7 @@ game_text = '''
 
 ng = NewGame(game_text)
 ng.reading_game_history()
+ng.game_moves_all()
 
 
 
