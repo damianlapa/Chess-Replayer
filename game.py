@@ -164,8 +164,55 @@ class ChessPiece:
 
             return self.possible_moves
         # queen move
+        elif self.piece_type == 'queen':
+            bishop_moves = ChessPiece('bishop', self.position).finding_possible_moves()
+            rook_moves = ChessPiece('rook', self.position).finding_possible_moves()
+            self.possible_moves = bishop_moves + rook_moves
+            return self.possible_moves
         # king move
-        pass
+        elif self.piece_type == 'king':
+            # up moves
+            if not 56 < self.position < 65:
+                move_1 = self.position + 8
+                self.possible_moves.append(move_1)
+                if not self.position % 8 == 1:
+                    move_2 = self.position + 7
+                    self.possible_moves.append(move_2)
+                if not self.position == 0:
+                    move_3 = self.position + 9
+                    self.possible_moves.append(move_3)
+            # left moves
+            if not self.position % 8 == 1:
+                move_1 = self.position - 1
+                self.possible_moves.append(move_1)
+                if self.position < 57:
+                    move_2 = self.position + 7
+                    self.possible_moves.append(move_2)
+                if self.position > 8:
+                    move_3 = self.position - 9
+                    self.possible_moves.append(move_3)
+            # down moves
+            if not 0 < self.position < 9:
+                move_1 = self.position - 8
+                self.possible_moves.append(move_1)
+                if not self.position % 8 == 1:
+                    move_2 = self.position - 9
+                    self.possible_moves.append(move_2)
+                if not self.position % 8 == 0:
+                    move_3 = self.position - 7
+                    self.possible_moves.append(move_3)
+            # right moves
+            if not self.position % 8 == 0:
+                move_1 = self.position + 1
+                self.possible_moves.append(move_1)
+                if self.position < 57:
+                    move_2 = self.position + 9
+                    self.possible_moves.append(move_2)
+                if self.position > 8:
+                    move_3 = self.position - 7
+                    self.possible_moves.append(move_3)
+
+            return list(set(self.possible_moves))
 
 
 class NewGame:
@@ -297,5 +344,5 @@ game_text = '''
 
 ng = NewGame(game_text)
 
-new_piece = ChessPiece('rook', , 'black')
+new_piece = ChessPiece('king', 40)
 print(new_piece.finding_possible_moves())
