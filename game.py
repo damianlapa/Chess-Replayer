@@ -114,6 +114,25 @@ class ChessPiece:
 
             return '{}{}//{}'.format(alphabet[column - 1], row + 1, self.possible_moves)
         # bishop move
+        elif self.piece_type == 'bishop':
+            # moves to left
+            current_position = self.position
+            i = 1
+            while True:
+                move_1 = current_position + 7*i
+                move_2 = current_position - 9*i
+                i += 1
+                if 0 < move_1 < 65:
+                    self.possible_moves.append(move_1)
+                if 0 < move_2 < 65:
+                    self.possible_moves.append(move_2)
+                if alphabet[(move_1 % 8)-1] == 'a':
+                    break
+            return self.possible_moves
+
+
+            # moves to right
+
         # rook move
         # queen move
         # king move
@@ -249,5 +268,5 @@ game_text = '''
 
 ng = NewGame(game_text)
 
-new_piece = ChessPiece('knight', 40, 'black')
+new_piece = ChessPiece('bishop', 40, 'black')
 print(new_piece.finding_possible_moves())
