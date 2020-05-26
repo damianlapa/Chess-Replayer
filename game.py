@@ -118,22 +118,51 @@ class ChessPiece:
             # moves to left
             current_position = self.position
             i = 1
-            while True:
-                move_1 = current_position + 7*i
-                move_2 = current_position - 9*i
-                i += 1
-                if 0 < move_1 < 65:
-                    self.possible_moves.append(move_1)
-                if 0 < move_2 < 65:
-                    self.possible_moves.append(move_2)
-                if alphabet[(move_1 % 8)-1] == 'a':
-                    break
+            if self.position % 8 != 1:
+                while True:
+                    move_1 = current_position + 7 * i
+                    move_2 = current_position - 9 * i
+                    i += 1
+                    if 0 < move_1 < 65:
+                        self.possible_moves.append(move_1)
+                    if 0 < move_2 < 65:
+                        self.possible_moves.append(move_2)
+                    if alphabet[(move_1 % 8) - 1] == 'a':
+                        break
+            # moves to right
+            i = 1
+            if self.position % 8 != 0:
+                while True:
+                    move_1 = current_position + 9 * i
+                    move_2 = current_position - 7 * i
+                    i += 1
+                    if 0 < move_1 < 65:
+                        self.possible_moves.append(move_1)
+                    if 0 < move_2 < 65:
+                        self.possible_moves.append(move_2)
+                    if alphabet[(move_1 % 8) - 1] == 'h':
+                        break
+
             return self.possible_moves
 
-
-            # moves to right
-
         # rook move
+        elif self.piece_type == 'rook':
+            y = self.position % 8
+            x = self.position // 8
+            for i in range(0, 8):
+                # vertical moves
+                if y != 0:
+                    move_1 = y + i * 8
+                else:
+                    move_1 = (i + 1) * 8
+                # horizontal moves
+                move_2 = x * 8 + i + 1
+                if move_1 != self.position:
+                    self.possible_moves.append(move_1)
+                if move_2 != self.position:
+                    self.possible_moves.append(move_2)
+
+            return self.possible_moves
         # queen move
         # king move
         pass
@@ -268,5 +297,5 @@ game_text = '''
 
 ng = NewGame(game_text)
 
-new_piece = ChessPiece('bishop', 40, 'black')
+new_piece = ChessPiece('rook', , 'black')
 print(new_piece.finding_possible_moves())
