@@ -39,8 +39,10 @@ class Board:
             for y in range(0, 8):
                 if y % 2 == 0:
                     create_field('#ffd699', 200 * x, 100 * y)
+                    self.board.create_text((200*x) +25, 100*y + 25, text=str(((7-y)*8 + x*2)+1))
                 else:
                     create_field('#ffd699', (200 * x) + 100, 100 * y)
+                    self.board.create_text((200 * x) + 125, 100 * y + 25, text=str((7 - y) * 8 + (x+1) * 2))
 
         alphabet = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
 

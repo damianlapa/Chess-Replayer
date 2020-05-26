@@ -7,39 +7,117 @@ class ChessBoard:
     def __init__(self, pieces=None):
         # creating fields
         for y in range(1, 9)[::-1]:
-            line = ''
             for x in range(0, 8):
                 field_nr = 8 * (y - 1) + x + 1
-                if not pieces:
-                    line += '{}{} '.format(alphabet[x], str(y))
-
-                else:
-                    field_piece = None
-                    for piece in pieces:
-                        if piece.position == field_nr:
-                            field_piece = piece
-                    if not field_piece:
-                        line += '{}{} '.format(alphabet[x], str(y))
-                    else:
-                        line += '{} '.format(field_piece.shortcut)
-
-                if x == 7:
-                    pass
-                    # print(line)
+        self.border_fields = ()
 
 
 class ChessPiece:
-    def __init__(self, name, shortcut, position=None, color='white'):
-        self.name = name
-        self.shortcut = shortcut
+    def __init__(self, piece_type, position=None, color='white'):
+        self.piece_type = piece_type
         self.color = color
         self.position = position
+        self.possible_moves = []
+        self.border_fields = ()
 
     def __str__(self):
-        return self.shortcut
+        return self.color + self.piece_type
+
+    def chessboard_border_fields(self):
+        fields_south = []
+        fields_north = []
+        fields_east = []
+        fields_west = []
+        i = 1
+        while i < 9:
+            fields_south.append(i)
+            fields_north.append(56 + i)
+            fields_west.append(1 + (i - 1) * 8)
+            fields_east.append(8 + (i - 1) * 8)
+            i += 1
+        self.border_fields = tuple(set(fields_east + fields_south + fields_west + fields_north))
+        return self.border_fields
 
     def new_position(self, new_position):
         self.position = new_position
+
+    def finding_possible_moves(self):
+        # pawn move
+        if self.piece_type == 'pawn':
+            if self.color == 'white':
+                if self.position in range(9, 17):
+                    for i in range(1, 3):
+                        self.possible_moves.append(self.position + 8 * i)
+                else:
+                    self.possible_moves.append(self.position + 8)
+            else:
+                if self.position in range(49, 57):
+                    for i in range(1, 3):
+                        self.possible_moves.append(self.position - 8 * i)
+                else:
+                    self.possible_moves.append(self.position - 8)
+
+            return self.possible_moves
+        # knight move
+        elif self.piece_type == 'knight':
+            # decode field number to chess board field
+            column = self.position % 8
+            row = self.position // 8
+            if column == 0:
+                row = row - 1
+            # possible knight moves
+            # west moves
+            if self.position % 8 not in (0, 7):
+                move_1 = self.position + 2 + 8
+                move_2 = self.position + 2 - 8
+                if 0 < move_1 < 65:
+                    self.possible_moves.append(move_1)
+                if 0 < move_2 < 65:
+                    self.possible_moves.append(move_2)
+
+            # east moves
+            if self.position % 8 not in (1, 2):
+                move_1 = self.position - 2 + 8
+                move_2 = self.position - 2 - 8
+                if 0 < move_1 < 65:
+                    self.possible_moves.append(move_1)
+                if 0 < move_2 < 65:
+                    self.possible_moves.append(move_2)
+
+            # north moves + south_moves
+            if self.position % 8 != 0:
+                row_ = (self.position // 8) + 1
+            else:
+                row_ = self.position // 8
+
+            # north moves
+            if row_ not in (7, 8):
+                move_1 = self.position + 16 + 1
+                move_2 = self.position + 16 - 1
+                if 0 < move_1 < 65:
+                    if self.position % 8 != 0:
+                        self.possible_moves.append(move_1)
+                if 0 < move_2 < 65:
+                    if self.position % 8 != 1:
+                        self.possible_moves.append(move_2)
+
+            # south moves
+            if row_ not in (1, 2):
+                move_1 = self.position - 16 + 1
+                move_2 = self.position - 16 - 1
+                if 0 < move_1 < 65:
+                    if self.position % 8 != 0:
+                        self.possible_moves.append(move_1)
+                if 0 < move_2 < 65:
+                    if self.position % 8 != 1:
+                        self.possible_moves.append(move_2)
+
+            return '{}{}//{}'.format(alphabet[column - 1], row + 1, self.possible_moves)
+        # bishop move
+        # rook move
+        # queen move
+        # king move
+        pass
 
 
 class NewGame:
@@ -52,30 +130,29 @@ class NewGame:
 
     def set_all_pieces(self):
         for i in range(0, 8):
-            piece = ChessPiece('white_pawn', f'wP{alphabet[i]}', 9 + i)
-            self.pieces.append(piece)
-        for i in range(0, 8):
-            piece = ChessPiece('black_pawn', f'bP{alphabet[i]}', 49 + i, 'black')
-            self.pieces.append(piece)
+            pawn = ChessPiece('pawn', 9 + i)
+            self.pieces.append(pawn)
+            black_pawn = ChessPiece('pawn', 49 + i, 'black')
+            self.pieces.append(black_pawn)
         for i in range(0, 2):
-            piece = ChessPiece('white_rook', 'wR', 1 + i * 7)
-            black_piece = ChessPiece('black_rook', 'bR', 57 + i * 7, 'black')
+            piece = ChessPiece('rook', 1 + i * 7)
+            black_piece = ChessPiece('rook', 57 + i * 7, 'black')
             self.pieces.append(piece)
             self.pieces.append(black_piece)
         for i in range(0, 2):
-            piece = ChessPiece('white_knight', 'wN', 2 + i * 5)
-            black_piece = ChessPiece('black_knight', 'bN', 58 + i * 5, 'black')
+            piece = ChessPiece('knight', 2 + i * 5)
+            black_piece = ChessPiece('knight', 58 + i * 5, 'black')
             self.pieces.append(piece)
             self.pieces.append(black_piece)
         for i in range(0, 2):
-            piece = ChessPiece('white_bishop', 'wB', 3 + i * 3)
-            black_piece = ChessPiece('black_bishop', 'bB', 59 + i * 3, 'black')
+            piece = ChessPiece('bishop', 3 + i * 3)
+            black_piece = ChessPiece('bishop', 59 + i * 3, 'black')
             self.pieces.append(piece)
             self.pieces.append(black_piece)
-        white_queen = ChessPiece('white_king', 'wK', 5)
-        white_king = ChessPiece('white_queen', 'wQ', 4)
-        black_queen = ChessPiece('black_king', 'bK', 61, 'black')
-        black_king = ChessPiece('black_queen', 'bQ', 60, 'black')
+        white_queen = ChessPiece('king', 5)
+        white_king = ChessPiece('queen', 4)
+        black_queen = ChessPiece('king', 61, 'black')
+        black_king = ChessPiece('queen', 60, 'black')
         self.pieces.append(white_queen)
         self.pieces.append(white_king)
         self.pieces.append(black_king)
@@ -90,6 +167,7 @@ class NewGame:
         for step in steps:
             for move in step.split():
                 self.game_moves.append(move)
+
     # separating steps
     # code moves for every text in moves history
 
@@ -129,6 +207,35 @@ class NewGame:
             if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', self.game_moves[i]):
                 print('{} two possible figures XXX [{}]({})'.format(color, self.game_moves[i], i))
 
+    def pawn_move(self):
+        pass
+        move1 = 'c4'
+        move2 = 'd7'
+        i = 1
+        # finding piece color
+        if i % 2 == 0:
+            color = 'white'
+        else:
+            color = 'black'
+        # finding piece which was moved
+        # finding actual place
+        field_nr = int(alphabet.index(move1[0]) * 8) + int(move1[1])
+        print(field_nr)
+        # place beneath and above actual field
+        border = field_nr
+        for i in range(1, 65):
+            # finding possible white pawns
+            if i <= field_nr:
+                color = 'white'
+            else:
+                color = 'black'
+            if i % 8 == field_nr % 8:
+                for piece in self.pieces:
+                    if piece.name == 'white_pawn':
+                        if piece.position == i:
+                            print(piece)
+
+
 game_text = '''
 1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
 7. Bh4 b6 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 11. Rc1 Be6
@@ -141,8 +248,6 @@ game_text = '''
 '''
 
 ng = NewGame(game_text)
-ng.reading_game_history()
-ng.game_moves_all()
 
-
-
+new_piece = ChessPiece('knight', 40, 'black')
+print(new_piece.finding_possible_moves())
