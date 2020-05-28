@@ -253,8 +253,6 @@ class NewGame:
         self.pieces.append(black_king)
         self.pieces.append(black_queen)
 
-    # TO DO
-
     # reading moves history
     def reading_game_history(self):
         self.game_moves = []
@@ -263,72 +261,70 @@ class NewGame:
             for move in step.split():
                 self.game_moves.append(move)
 
-    # separating steps
-    # code moves for every text in moves history
-
-    def game_moves_all(self):
-        # black or white moves
-        for i in range(0, len(self.game_moves)):
-            if i % 2 == 0:
-                color = 'white'
+    def move_types(self, move):
+        move_type = None
+        # pawn move
+        if re.fullmatch(r'[abcdefgh]\d', move):
+            move_type = 'pawn'
+        # rook move
+        if re.fullmatch(r'R[a-z]\d', move):
+            move_type = 'rook'
+        # knight move
+        if re.fullmatch(r'N[a-z]\d', move):
+            move_type = 'knight'
+        # bishop move
+        if re.fullmatch(r'B[a-z]\d', move):
+            move_type = 'bishop'
+        # queen move
+        if re.fullmatch(r'Q[a-z]\d', move):
+            move_type = 'queen'
+        # king move
+        if re.fullmatch(r'K[a-z]\d', move):
+            move_type = 'king'
+        if move == 'O-O':
+            move_type = 'short castle'
+        if move == 'O-O-O':
+            move_type = 'long castle'
+        if re.fullmatch(r'[a-z|A-Z]x[a-z]\d', move):
+            if move[0] in alphabet:
+                move_type = 'pawn capture'
+            elif move[0] == 'R':
+                move_type = 'rook capture'
+            elif move[0] == 'B':
+                move_type = 'bishop capture'
+            elif move[0] == 'N':
+                move_type = 'knight capture'
+            elif move[0] == 'Q':
+                move_type = 'queen capture'
             else:
-                color = 'black'
-            # pawn move
-            if re.fullmatch(r'[a-z]\d', self.game_moves[i]):
-                print('{} pawn move [{}]({})'.format(color, self.game_moves[i], i))
-            # rook move
-            if re.fullmatch(r'R[a-z]\d', self.game_moves[i]):
-                print('{} rook move [{}]({})'.format(color, self.game_moves[i], i))
-            # knight move
-            if re.fullmatch(r'N[a-z]\d', self.game_moves[i]):
-                print('{} knight move [{}]({})'.format(color, self.game_moves[i], i))
-            # bishop move
-            if re.fullmatch(r'B[a-z]\d', self.game_moves[i]):
-                print('{} bishop move [{}]({})'.format(color, self.game_moves[i], i))
-            # queen move
-            if re.fullmatch(r'Q[a-z]\d', self.game_moves[i]):
-                print('{} queen move [{}]({})'.format(color, self.game_moves[i], i))
-            # king move
-            if re.fullmatch(r'K[a-z]\d', self.game_moves[i]):
-                print('{} king move [{}]({})'.format(color, self.game_moves[i], i))
-            if self.game_moves[i] == 'O-O':
-                print('{} short castle [{}]({})'.format(color, self.game_moves[i], i))
-            if self.game_moves[i] == 'O-O-O':
-                print('{} long castle [{}]({})'.format(color, self.game_moves[i], i))
-            if re.fullmatch(r'[a-z|A-Z]x[a-z]\d', self.game_moves[i]):
-                print('{} XXX [{}]({})'.format(color, self.game_moves[i], i))
-            if re.fullmatch(r'[a-z|A-Z][abcdefgh][a-z]\d', self.game_moves[i]):
-                print('{} two possible figures [{}]({})'.format(color, self.game_moves[i], i))
-            if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', self.game_moves[i]):
-                print('{} two possible figures XXX [{}]({})'.format(color, self.game_moves[i], i))
+                move_type = 'king capture'
+        if re.fullmatch(r'[a-z|A-Z][abcdefgh][a-z]\d', move):
+            move_type = 'pos'
+        if re.fullmatch(r'R\d[abcdefgh]\d', move):
+            move_type = 'two rooks'
+        if re.fullmatch(r'R\dx[abcdefgh]\d', move):
+            move_type = 'two rooks capture'
+        if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', move):
+            move_type = 'pos2'
 
-    def pawn_move(self):
-        pass
-        move1 = 'c4'
-        move2 = 'd7'
-        i = 1
-        # finding piece color
-        if i % 2 == 0:
+        return move_type
+
+
+    def move(self, num):
+        # finding side color
+        if num % 2 == 0:
             color = 'white'
         else:
             color = 'black'
-        # finding piece which was moved
-        # finding actual place
-        field_nr = int(alphabet.index(move1[0]) * 8) + int(move1[1])
-        print(field_nr)
-        # place beneath and above actual field
-        border = field_nr
-        for i in range(1, 65):
-            # finding possible white pawns
-            if i <= field_nr:
-                color = 'white'
-            else:
-                color = 'black'
-            if i % 8 == field_nr % 8:
-                for piece in self.pieces:
-                    if piece.name == 'white_pawn':
-                        if piece.position == i:
-                            print(piece)
+
+        # finding move type
+
+        # finding piece(s)
+
+        # field = re.search(r'[abcdefgh]\d', self.game_moves[num]).group()
+        # print(field)
+        print(num, self.move_types(self.game_moves[num]))
+
 
 
 game_text = '''
@@ -343,6 +339,6 @@ game_text = '''
 '''
 
 ng = NewGame(game_text)
-
-new_piece = ChessPiece('king', 40)
-print(new_piece.finding_possible_moves())
+ng.reading_game_history()
+for i in range(0, 77):
+    ng.move(i)
