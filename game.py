@@ -276,6 +276,19 @@ class NewGame:
         self.pieces.append(black_queen)
         print(len(self.pieces))
 
+    # capturing a piece
+    def piece_capture(self, position, final_position):
+        piece_type = None
+        piece_color = None
+        for piece in self.pieces:
+            if piece.position == position:
+                piece_type = piece.piece_type
+                piece_color = piece.color
+                self.pieces.remove(piece)
+            elif piece.position == final_position:
+                self.pieces.remove(piece)
+        self.pieces.append(ChessPiece(piece_type, final_position, piece_color))
+
     # reading moves history
     def reading_game_history(self):
         steps = re.split(r'\d+\.', self.game_description)
@@ -395,6 +408,7 @@ class NewGame:
                         pawn_position = final_position + 9
                     else:
                         pawn_position = final_position + 7
+                self.piece_capture(pawn_position, final_position)
 
             return move_type
         # finding piece(s)

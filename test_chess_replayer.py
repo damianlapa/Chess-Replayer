@@ -66,3 +66,9 @@ def test_possible_black_pawns_moves():
 
     assert sorted(black_pawn_1.possible_moves) == [34, 41, 42, 43] and sorted(black_pawn_2.possible_moves) == [11, 12,
                                                                                                                13]
+
+def test_piece_capture():
+    before = len(new_game.pieces)
+    new_game.piece_capture(1, 2)
+    after = len(new_game.pieces)
+    assert before - 1 == after
