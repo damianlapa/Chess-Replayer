@@ -19,9 +19,20 @@ class ChessPiece:
         self.position = position
         self.possible_moves = []
         self.border_fields = ()
+        self.finding_possible_moves()
 
     def __str__(self):
-        return self.color + self.piece_type
+        return self.color + self.piece_type + self.piece_notation_position()
+
+    def piece_notation_position(self):
+        text = ''
+        if self.position % 8 != 0:
+            text += alphabet[self.position % 8 - 1]
+            text += str(self.position // 8 + 1)
+        else:
+            text += alphabet[7]
+            text += str(self.position // 8)
+        return text
 
     def chessboard_border_fields(self):
         fields_south = []
@@ -46,18 +57,28 @@ class ChessPiece:
         if self.piece_type == 'pawn':
             if self.color == 'white':
                 if self.position in range(9, 17):
-                    for i in range(1, 3):
-                        self.possible_moves.append(self.position + 8 * i)
+                    self.possible_moves.append(self.position + 9)
+                    self.possible_moves.append(self.position + 7)
+                    for j in range(1, 3):
+                        self.possible_moves.append(self.position + 8 * j)
                 else:
                     self.possible_moves.append(self.position + 8)
+                    self.possible_moves.append(self.position + 7)
+                    self.possible_moves.append(self.position + 9)
             else:
                 if self.position in range(49, 57):
-                    for i in range(1, 3):
-                        self.possible_moves.append(self.position - 8 * i)
+                    self.possible_moves.append(self.position - 9)
+                    self.possible_moves.append(self.position - 7)
+                    for j in range(1, 3):
+                        self.possible_moves.append(self.position - 8 * j)
                 else:
                     self.possible_moves.append(self.position - 8)
+                    self.possible_moves.append(self.position - 7)
+                    self.possible_moves.append(self.position - 9)
 
             return self.possible_moves
+        # pawn capture
+
         # knight move
         elif self.piece_type == 'knight':
             # decode field number to chess board field
@@ -229,6 +250,7 @@ class NewGame:
             self.pieces.append(pawn)
             black_pawn = ChessPiece('pawn', 49 + i, 'black')
             self.pieces.append(black_pawn)
+            print(len(self.pieces))
         for i in range(0, 2):
             piece = ChessPiece('rook', 1 + i * 7)
             black_piece = ChessPiece('rook', 57 + i * 7, 'black')
@@ -252,10 +274,10 @@ class NewGame:
         self.pieces.append(white_king)
         self.pieces.append(black_king)
         self.pieces.append(black_queen)
+        print(len(self.pieces))
 
     # reading moves history
     def reading_game_history(self):
-        self.game_moves = []
         steps = re.split(r'\d+\.', self.game_description)
         for step in steps:
             for move in step.split():
@@ -285,7 +307,7 @@ class NewGame:
             move_type = 'short castle'
         if move == 'O-O-O':
             move_type = 'long castle'
-        if re.fullmatch(r'[a-z|A-Z]x[a-z]\d', move):
+        if re.fullmatch(r'[abcdefgh|A-Z]x[abcdefgh]\d', move):
             if move[0] in alphabet:
                 move_type = 'pawn capture'
             elif move[0] == 'R':
@@ -309,7 +331,6 @@ class NewGame:
 
         return move_type
 
-
     def move(self, num):
         # finding side color
         if num % 2 == 0:
@@ -318,13 +339,66 @@ class NewGame:
             color = 'black'
 
         # finding move type
+        move_type = self.move_types(self.game_moves[num])
+        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle'):
+            for piece in self.pieces:
+                if piece.piece_type == move_type:
+                    return move_type
+                elif piece.piece_type + ' capture' == move_type:
+                    return move_type
+                elif move_type == 'pos':
+                    return 'pos'
+                elif move_type == 'pos2':
+                    return 'pos2'
+                elif move_type == 'two rooks':
+                    return 'two rooks'
+                elif move_type == 'two rooks capture':
+                    return 'tRc'
+        else:
+            if move_type == 'pawn':
+                final_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][0]) + 1
+                for piece in self.pieces:
+                    if piece.color == 'white':
+                        if piece.position == final_position - 8:
+                            self.pieces.remove(piece)
+                            new_piece = ChessPiece('pawn', final_position, color)
+                            self.pieces.append(new_piece)
+                            return 'white pawn'
+                        elif piece.position == final_position - 16:
+                            self.pieces.remove(piece)
+                            new_piece = ChessPiece('pawn', final_position, color)
+                            self.pieces.append(new_piece)
+                            return 'white pawn 16'
+                    else:
+                        if piece.position == final_position + 8:
+                            self.pieces.remove(piece)
+                            new_piece = ChessPiece('pawn', final_position, color)
+                            self.pieces.append(new_piece)
+                            return 'black pawn'
+                        elif piece.position == final_position + 16:
+                            self.pieces.remove(piece)
+                            new_piece = ChessPiece('pawn', final_position, color)
+                            self.pieces.append(new_piece)
+                            return 'black pawn 16'
+            elif move_type == 'pawn capture':
+                print(self.game_moves[num])
+                final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
+                pawn_horizontal_position = alphabet.index(self.game_moves[num][0])
+                final_horizontal_position = alphabet.index(self.game_moves[num][2])
+                if color == 'white':
+                    if pawn_horizontal_position > final_horizontal_position:
+                        pawn_position = final_position - 7
+                    else:
+                        pawn_position = final_position - 9
+                else:
+                    if pawn_horizontal_position > final_horizontal_position:
+                        pawn_position = final_position + 9
+                    else:
+                        pawn_position = final_position + 7
 
+            return move_type
         # finding piece(s)
-
-        # field = re.search(r'[abcdefgh]\d', self.game_moves[num]).group()
-        # print(field)
-        print(num, self.move_types(self.game_moves[num]))
-
+        # final field
 
 
 game_text = '''
@@ -338,7 +412,12 @@ game_text = '''
 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
 '''
 
+gt = '''
+1. c4 e6 2. b4 b5 3. Nf3 a6 4. cxd5'''
+
 ng = NewGame(game_text)
 ng.reading_game_history()
 for i in range(0, 77):
-    ng.move(i)
+    '''if not ng.move(i):
+        break'''
+    print(i, ng.move(i))
