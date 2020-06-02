@@ -51,8 +51,10 @@ class ChessPiece:
 
     def new_position(self, new_position):
         self.position = new_position
+        self.possible_moves = self.finding_possible_moves()
 
     def finding_possible_moves(self):
+        self.possible_moves = []
         # pawn move
         if self.piece_type == 'pawn':
             if self.color == 'white':
@@ -133,7 +135,8 @@ class ChessPiece:
                     if self.position % 8 != 1:
                         self.possible_moves.append(move_2)
 
-            return '{}{}//{}'.format(alphabet[column - 1], row + 1, self.possible_moves)
+            return self.possible_moves
+
         # bishop move
         elif self.piece_type == 'bishop':
             # moves to left
@@ -355,33 +358,45 @@ class NewGame:
         move_type = self.move_types(self.game_moves[num])
         if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle'):
             for piece in self.pieces:
-                if piece.piece_type == move_type:
-                    return move_type
-                elif piece.piece_type + ' capture' == move_type:
-                    return move_type
-                elif move_type == 'pos':
-                    return 'pos'
-                elif move_type == 'pos2':
-                    return 'pos2'
-                elif move_type == 'two rooks':
-                    return 'two rooks'
-                elif move_type == 'two rooks capture':
-                    return 'tRc'
+                if piece.color == color:
+                    if piece.piece_type == move_type:
+                        final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
+                            self.game_moves[num][1]) + 1
+                        if final_position in piece.possible_moves:
+                            self.pieces.remove(piece)
+                            piece.new_position(final_position)
+                            self.pieces.append(piece)
+                            return piece.color, piece.piece_type, piece.possible_moves
+                    elif piece.piece_type + ' capture' == move_type:
+                        final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
+                            self.game_moves[num][2]) + 1
+                        if final_position in piece.possible_moves:
+                            self.piece_capture(piece.position, final_position)
+                            return move_type, len(self.pieces)
+                    elif move_type == 'pos':
+                        return 'pos'
+                    elif move_type == 'pos2':
+                        return 'pos2'
+                    elif move_type == 'two rooks':
+                        return 'two rooks'
+                    elif move_type == 'two rooks capture':
+                        return 'tRc'
         else:
             if move_type == 'pawn':
                 final_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][0]) + 1
                 for piece in self.pieces:
-                    if piece.color == 'white':
-                        if piece.position == final_position - 8:
-                            self.pieces.remove(piece)
-                            new_piece = ChessPiece('pawn', final_position, color)
-                            self.pieces.append(new_piece)
-                            return 'white pawn'
-                        elif piece.position == final_position - 16:
-                            self.pieces.remove(piece)
-                            new_piece = ChessPiece('pawn', final_position, color)
-                            self.pieces.append(new_piece)
-                            return 'white pawn 16'
+                    if color == 'white':
+                        if piece.color == color:
+                            if piece.position == final_position - 8:
+                                self.pieces.remove(piece)
+                                new_piece = ChessPiece('pawn', final_position, color)
+                                self.pieces.append(new_piece)
+                                return 'white pawn'
+                            elif piece.position == final_position - 16:
+                                self.pieces.remove(piece)
+                                new_piece = ChessPiece('pawn', final_position, color)
+                                self.pieces.append(new_piece)
+                                return 'white pawn 16'
                     else:
                         if piece.position == final_position + 8:
                             self.pieces.remove(piece)
@@ -398,6 +413,7 @@ class NewGame:
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
                 pawn_horizontal_position = alphabet.index(self.game_moves[num][0])
                 final_horizontal_position = alphabet.index(self.game_moves[num][2])
+
                 if color == 'white':
                     if pawn_horizontal_position > final_horizontal_position:
                         pawn_position = final_position - 7
@@ -427,11 +443,12 @@ game_text = '''
 '''
 
 gt = '''
-1. c4 e6 2. b4 b5 3. Nf3 a6 4. cxd5'''
+1. e4 d5 2. e5 f5 3. exf6 Kf7
+'''
 
 ng = NewGame(game_text)
 ng.reading_game_history()
 for i in range(0, 77):
-    '''if not ng.move(i):
-        break'''
+    print(i, ng.game_moves[i])
+for i in range(0, 77):
     print(i, ng.move(i))
