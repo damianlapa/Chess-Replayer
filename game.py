@@ -53,6 +53,7 @@ class ChessPiece:
         self.position = new_position
         self.possible_moves = self.finding_possible_moves()
 
+
     def finding_possible_moves(self):
         self.possible_moves = []
         # pawn move
@@ -180,7 +181,10 @@ class ChessPiece:
                 else:
                     move_1 = (i + 1) * 8
                 # horizontal moves
-                move_2 = x * 8 + i + 1
+                if x != 8:
+                    move_2 = x * 8 + i + 1
+                else:
+                    move_2 = (x - 1) * 8 + 1 + i
                 if move_1 != self.position:
                     self.possible_moves.append(move_1)
                 if move_2 != self.position:
@@ -362,6 +366,8 @@ class NewGame:
                     if piece.piece_type == move_type:
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
+                        if num == 31:
+                            print(piece.possible_moves)
                         if final_position in piece.possible_moves:
                             self.pieces.remove(piece)
                             piece.new_position(final_position)
@@ -425,6 +431,39 @@ class NewGame:
                     else:
                         pawn_position = final_position + 7
                 self.piece_capture(pawn_position, final_position)
+
+            elif move_type == 'short castle':
+                for piece in self.pieces:
+                    if color == 'white':
+                        rook = piece if piece.position == 8 else None
+                        king = piece if piece.position == 5 else None
+                        if rook:
+                            rook.new_position(6)
+                        if king:
+                            king.new_position(7)
+                    else:
+                        rook = piece if piece.position == 64 else None
+                        king = piece if piece.position == 61 else None
+                        if rook:
+                            rook.new_position(62)
+                        if king:
+                            king.new_position(63)
+            else:
+                for piece in self.pieces:
+                    if color == 'white':
+                        rook = piece if piece.position == 1 else None
+                        king = piece if piece.position == 5 else None
+                        if rook:
+                            rook.new_position(4)
+                        if king:
+                            king.new_position(3)
+                    else:
+                        rook = piece if piece.position == 57 else None
+                        king = piece if piece.position == 61 else None
+                        if rook:
+                            rook.new_position(60)
+                        if king:
+                            king.new_position(59)
 
             return move_type
         # finding piece(s)
