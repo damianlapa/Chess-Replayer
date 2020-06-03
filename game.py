@@ -53,7 +53,6 @@ class ChessPiece:
         self.position = new_position
         self.possible_moves = self.finding_possible_moves()
 
-
     def finding_possible_moves(self):
         self.possible_moves = []
         # pawn move
@@ -283,6 +282,60 @@ class NewGame:
         self.pieces.append(black_queen)
         print(len(self.pieces))
 
+    def rook_blocked_lines(self, rook):
+        print(rook, rook.possible_moves)
+        blocked_horizontal_line_east = False
+        blocked_horizontal_line_west = False
+        blocked_vertical_line_north = False
+        blocked_vertical_line_south = False
+        end_line_east = False
+        end_line_west = False
+        end_line_north = False
+        end_line_south = False
+        if rook.position % 8 == 0:
+            end_line_east = True
+            if rook.position // 8 == 8:
+                end_line_north = True
+            if rook.position // 8 == 1:
+                end_line_south = True
+        if rook.position % 8 == 1:
+            end_line_west = True
+        if rook.position // 8 == 0:
+            end_line_south = True
+        if rook.position // 8 == 7 and rook.position % 8 != 7:
+            end_line_north = True
+        for x in range(1, 8):
+            move_right = rook.position + x
+            move_left = rook.position - x
+            move_up = rook.position + (x * 8)
+            move_down = rook.position - (x * 8)
+            for piece in self.pieces:
+                if piece.position == move_right:
+                    blocked_horizontal_line_east = True
+                    break
+                if piece.position == move_left:
+                    blocked_horizontal_line_west = True
+                    break
+                if piece.position == move_down:
+                    blocked_vertical_line_south = True
+                    break
+                if piece.position == move_up:
+                    blocked_vertical_line_north = True
+                    break
+            if not end_line_east:
+                if blocked_horizontal_line_east:
+                    if move_right in rook.possible_moves:
+                        rook.possible_moves.remove(move_right)
+            if not end_line_west:
+                if blocked_horizontal_line_west:
+                    if move_left in rook.possible_moves:
+                        rook.possible_moves.remove(move_left)
+            # dokonczyc blokowanie linii gora/dol
+            if move_right % 8 == 0:
+                end_line_west = True
+            if move_left % 8 == 1:
+                end_line_east = True
+
     # capturing a piece
     def piece_capture(self, position, final_position):
         piece_type = None
@@ -364,6 +417,8 @@ class NewGame:
             for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
+                        if piece.piece_type == 'rook':
+                            self.rook_blocked_lines(piece)
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
                         if num == 31:
