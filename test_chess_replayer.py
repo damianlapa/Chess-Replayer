@@ -11,7 +11,10 @@ game_text = '''
 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
 '''
 
+test_game = '1. a4 Nc6 2. Ra3 Rb8 3. Rh3'
+
 new_game = NewGame(game_text)
+new_game_2 = NewGame(game_text)
 
 
 def test_setting_pieces_for_new_game():
@@ -72,3 +75,12 @@ def test_piece_capture():
     new_game.piece_capture(1, 2)
     after = len(new_game.pieces)
     assert before - 1 == after
+
+
+def test_rook_blocked_lines():
+    rooks = []
+    for piece in new_game_2.pieces:
+        rook = piece if piece.piece_type == 'rook' else None
+        if rook:
+            rooks.append(piece)
+    assert len(rooks) == 4

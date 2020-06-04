@@ -177,19 +177,17 @@ class ChessPiece:
                 # vertical moves
                 if y != 0:
                     move_1 = y + i * 8
-                else:
-                    move_1 = (i + 1) * 8
-                # horizontal moves
-                if x != 8:
                     move_2 = x * 8 + i + 1
                 else:
-                    move_2 = (x - 1) * 8 + 1 + i
+                    move_1 = (i + 1) * 8
+                    move_2 = (x - 1) * 8 + i + 1
+
                 if move_1 != self.position:
                     self.possible_moves.append(move_1)
                 if move_2 != self.position:
                     self.possible_moves.append(move_2)
 
-            return self.possible_moves
+            return sorted(self.possible_moves)
         # queen move
         elif self.piece_type == 'queen':
             bishop_moves = ChessPiece('bishop', self.position).finding_possible_moves()
@@ -256,7 +254,6 @@ class NewGame:
             self.pieces.append(pawn)
             black_pawn = ChessPiece('pawn', 49 + i, 'black')
             self.pieces.append(black_pawn)
-            print(len(self.pieces))
         for i in range(0, 2):
             piece = ChessPiece('rook', 1 + i * 7)
             black_piece = ChessPiece('rook', 57 + i * 7, 'black')
@@ -280,61 +277,67 @@ class NewGame:
         self.pieces.append(white_king)
         self.pieces.append(black_king)
         self.pieces.append(black_queen)
-        print(len(self.pieces))
 
     def rook_blocked_lines(self, rook):
-        print(rook, rook.possible_moves)
+        rook.possible_moves = []
+        rook.finding_possible_moves()
+        self.pieces.remove(rook)
         blocked_horizontal_line_east = False
         blocked_horizontal_line_west = False
         blocked_vertical_line_north = False
         blocked_vertical_line_south = False
-        end_line_east = False
-        end_line_west = False
-        end_line_north = False
-        end_line_south = False
-        if rook.position % 8 == 0:
-            end_line_east = True
-            if rook.position // 8 == 8:
-                end_line_north = True
-            if rook.position // 8 == 1:
-                end_line_south = True
-        if rook.position % 8 == 1:
-            end_line_west = True
-        if rook.position // 8 == 0:
-            end_line_south = True
-        if rook.position // 8 == 7 and rook.position % 8 != 7:
-            end_line_north = True
+        blocked_horizontal_line_east_by_opponent_piece = False
+        blocked_horizontal_line_west_by_opponent_piece = False
+        blocked_vertical_line_north_by_opponent_piece = False
+        blocked_vertical_line_south_by_opponent_piece = False
         for x in range(1, 8):
             move_right = rook.position + x
             move_left = rook.position - x
             move_up = rook.position + (x * 8)
             move_down = rook.position - (x * 8)
-            for piece in self.pieces:
-                if piece.position == move_right:
-                    blocked_horizontal_line_east = True
-                    break
-                if piece.position == move_left:
-                    blocked_horizontal_line_west = True
-                    break
-                if piece.position == move_down:
-                    blocked_vertical_line_south = True
-                    break
-                if piece.position == move_up:
-                    blocked_vertical_line_north = True
-                    break
-            if not end_line_east:
-                if blocked_horizontal_line_east:
-                    if move_right in rook.possible_moves:
-                        rook.possible_moves.remove(move_right)
-            if not end_line_west:
-                if blocked_horizontal_line_west:
-                    if move_left in rook.possible_moves:
-                        rook.possible_moves.remove(move_left)
-            # dokonczyc blokowanie linii gora/dol
-            if move_right % 8 == 0:
-                end_line_west = True
-            if move_left % 8 == 1:
-                end_line_east = True
+            for piece_ in self.pieces:
+                if piece_.position == move_right:
+                    if piece_.color == rook.color:
+                        blocked_horizontal_line_east = True
+                    else:
+                        blocked_horizontal_line_east_by_opponent_piece = True
+                if piece_.position == move_left:
+                    if piece_.color == rook.color:
+                        blocked_horizontal_line_west = True
+                    else:
+                        blocked_horizontal_line_west_by_opponent_piece = True
+                if piece_.position == move_down:
+                    if piece_.color == rook.color:
+                        blocked_vertical_line_south = True
+                    else:
+                        blocked_vertical_line_south_by_opponent_piece = True
+                if piece_.position == move_up:
+                    if piece_.color == rook.color:
+                        blocked_vertical_line_north = True
+                    else:
+                        blocked_vertical_line_north_by_opponent_piece = True
+            if blocked_horizontal_line_east:
+                if move_right in rook.possible_moves:
+                    rook.possible_moves.remove(move_right)
+            if blocked_horizontal_line_west:
+                if move_left in rook.possible_moves:
+                    rook.possible_moves.remove(move_left)
+            if blocked_vertical_line_north:
+                if move_up in rook.possible_moves:
+                    rook.possible_moves.remove(move_up)
+            if blocked_vertical_line_south:
+                if move_down in rook.possible_moves:
+                    rook.possible_moves.remove(move_down)
+            if blocked_horizontal_line_east_by_opponent_piece:
+                blocked_horizontal_line_east = True
+            if blocked_horizontal_line_west_by_opponent_piece:
+                blocked_horizontal_line_west = True
+            if blocked_vertical_line_south_by_opponent_piece:
+                blocked_vertical_line_south = True
+            if blocked_vertical_line_north_by_opponent_piece:
+                blocked_vertical_line_north = True
+        self.pieces.append(rook)
+        return rook.possible_moves
 
     # capturing a piece
     def piece_capture(self, position, final_position):
@@ -421,13 +424,13 @@ class NewGame:
                             self.rook_blocked_lines(piece)
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
-                        if num == 31:
-                            print(piece.possible_moves)
                         if final_position in piece.possible_moves:
                             self.pieces.remove(piece)
                             piece.new_position(final_position)
                             self.pieces.append(piece)
-                            return piece.color, piece.piece_type, piece.possible_moves
+                            if piece.piece_type == 'rook':
+                                self.rook_blocked_lines(piece)
+                            return move_type
                     elif piece.piece_type + ' capture' == move_type:
                         final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][2]) + 1
@@ -546,3 +549,4 @@ for i in range(0, 77):
     print(i, ng.game_moves[i])
 for i in range(0, 77):
     print(i, ng.move(i))
+
