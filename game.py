@@ -360,6 +360,7 @@ class NewGame:
                 self.game_moves.append(move)
 
     def move_types(self, move):
+        print(move)
         move_type = None
         # pawn move
         if re.fullmatch(r'[abcdefgh]\d', move):
@@ -396,9 +397,9 @@ class NewGame:
                 move_type = 'queen capture'
             else:
                 move_type = 'king capture'
-        if re.fullmatch(r'[a-z|A-Z][abcdefgh][a-z]\d', move):
+        if re.fullmatch(r'R[abcdefgh|0-9][abcdefgh]\d', move):
             move_type = 'pos'
-        if re.fullmatch(r'R\d[abcdefgh]\d', move):
+        if re.fullmatch(r'R\d[abcdefgh]\d', move) or re.fullmatch(r'R[abcdefgh][a-z]\d', move):
             move_type = 'two rooks'
         if re.fullmatch(r'R\dx[abcdefgh]\d', move):
             move_type = 'two rooks capture'
@@ -416,7 +417,7 @@ class NewGame:
 
         # finding move type
         move_type = self.move_types(self.game_moves[num])
-        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle'):
+        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle', 'two rooks'):
             for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
@@ -429,11 +430,15 @@ class NewGame:
                             piece.new_position(final_position)
                             self.pieces.append(piece)
                             if piece.piece_type == 'rook':
+                                print(piece)
                                 self.rook_blocked_lines(piece)
                             return move_type
                     elif piece.piece_type + ' capture' == move_type:
                         final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][2]) + 1
+                        if piece.piece_type == 'rook':
+                            # print(piece)
+                            self.rook_blocked_lines(piece)
                         if final_position in piece.possible_moves:
                             self.piece_capture(piece.position, final_position)
                             return move_type, len(self.pieces)
@@ -441,8 +446,6 @@ class NewGame:
                         return 'pos'
                     elif move_type == 'pos2':
                         return 'pos2'
-                    elif move_type == 'two rooks':
-                        return 'two rooks'
                     elif move_type == 'two rooks capture':
                         return 'tRc'
         else:
@@ -506,7 +509,7 @@ class NewGame:
                             rook.new_position(62)
                         if king:
                             king.new_position(63)
-            else:
+            elif move_type == 'long castle':
                 for piece in self.pieces:
                     if color == 'white':
                         rook = piece if piece.position == 1 else None
@@ -522,7 +525,20 @@ class NewGame:
                             rook.new_position(60)
                         if king:
                             king.new_position(59)
+            elif move_type == 'two rooks':
+                try:
+                    rook_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
+                except ValueError:
+                    rook_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][1]) + 1
+                final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
+                for piece in self.pieces:
+                    if piece.position == rook_position:
+                        piece.new_position(final_position)
+                        self.rook_blocked_lines(piece)
+                print(rook_position, final_position)
 
+            else:
+                pass
             return move_type
         # finding piece(s)
         # final field
@@ -547,6 +563,6 @@ ng = NewGame(game_text)
 ng.reading_game_history()
 for i in range(0, 77):
     print(i, ng.game_moves[i])
-for i in range(0, 77):
+for i in range(0, 80):
     print(i, ng.move(i))
 
