@@ -13,8 +13,11 @@ game_text = '''
 
 test_game = '1. a4 Nc6 2. Ra3 Rb8 3. Rh3'
 
+two_rooks_game = '1. h4 h5 2. Rh3 a6 3. a3 b6 4. a4 d5 5. Raa3 d4 6. g4 d3 7. Rhxd3'
+
 new_game = NewGame(game_text)
 new_game_2 = NewGame(game_text)
+new_game_3 = NewGame(two_rooks_game)
 
 
 def test_setting_pieces_for_new_game():
@@ -84,3 +87,9 @@ def test_rook_blocked_lines():
         if rook:
             rooks.append(piece)
     assert len(rooks) == 4
+
+
+def test_two_rooks_capture():
+    for i in range(0, 13):
+        new_game_3.move(i)
+    assert new_game_3.move(12) == 'two rooks capture'

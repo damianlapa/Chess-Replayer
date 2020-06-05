@@ -247,6 +247,7 @@ class NewGame:
         self.set_all_pieces()
         self.board = ChessBoard(self.pieces)
         self.game_moves = []
+        self.reading_game_history()
 
     def set_all_pieces(self):
         for i in range(0, 8):
@@ -343,14 +344,26 @@ class NewGame:
     def piece_capture(self, position, final_position):
         piece_type = None
         piece_color = None
+        captured_piece = None
+        capturing_piece = None
         for piece in self.pieces:
             if piece.position == position:
                 piece_type = piece.piece_type
                 piece_color = piece.color
-                self.pieces.remove(piece)
+                print('capturing piece', piece)
+                capturing_piece = piece
             elif piece.position == final_position:
-                self.pieces.remove(piece)
-        self.pieces.append(ChessPiece(piece_type, final_position, piece_color))
+                print('captured piece', piece)
+                captured_piece = piece
+            if None not in (capturing_piece, captured_piece):
+                break
+        if None in (capturing_piece, captured_piece):
+            raise NameError('brak elemetu')
+        self.pieces.remove(captured_piece)
+        self.pieces.remove(capturing_piece)
+        moved_capturing_piece = ChessPiece(piece_type, final_position, piece_color)
+        print('###########################', moved_capturing_piece)
+        self.pieces.append(moved_capturing_piece)
 
     # reading moves history
     def reading_game_history(self):
@@ -360,7 +373,6 @@ class NewGame:
                 self.game_moves.append(move)
 
     def move_types(self, move):
-        print(move)
         move_type = None
         # pawn move
         if re.fullmatch(r'[abcdefgh]\d', move):
@@ -401,10 +413,11 @@ class NewGame:
             move_type = 'pos'
         if re.fullmatch(r'R\d[abcdefgh]\d', move) or re.fullmatch(r'R[abcdefgh][a-z]\d', move):
             move_type = 'two rooks'
-        if re.fullmatch(r'R\dx[abcdefgh]\d', move):
+        if re.fullmatch(r'R\dx[abcdefgh]\d', move) or re.fullmatch(r'R[abcdefgh]x[abcdefgh]\d', move):
             move_type = 'two rooks capture'
-        if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', move):
+        '''if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', move):
             move_type = 'pos2'
+            '''
 
         return move_type
 
@@ -417,7 +430,7 @@ class NewGame:
 
         # finding move type
         move_type = self.move_types(self.game_moves[num])
-        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle', 'two rooks'):
+        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle', 'two rooks', 'two rooks capture'):
             for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
@@ -428,6 +441,7 @@ class NewGame:
                         if final_position in piece.possible_moves:
                             self.pieces.remove(piece)
                             piece.new_position(final_position)
+                            piece.finding_possible_moves()
                             self.pieces.append(piece)
                             if piece.piece_type == 'rook':
                                 print(piece)
@@ -440,41 +454,41 @@ class NewGame:
                             # print(piece)
                             self.rook_blocked_lines(piece)
                         if final_position in piece.possible_moves:
+                            print(piece, piece.position, final_position)
                             self.piece_capture(piece.position, final_position)
                             return move_type, len(self.pieces)
                     elif move_type == 'pos':
                         return 'pos'
                     elif move_type == 'pos2':
                         return 'pos2'
-                    elif move_type == 'two rooks capture':
-                        return 'tRc'
         else:
             if move_type == 'pawn':
                 final_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][0]) + 1
                 for piece in self.pieces:
-                    if color == 'white':
-                        if piece.color == color:
-                            if piece.position == final_position - 8:
+                    if piece.piece_type == 'pawn':
+                        if color == 'white':
+                            if piece.color == color:
+                                if piece.position == final_position - 8:
+                                    self.pieces.remove(piece)
+                                    new_piece = ChessPiece('pawn', final_position, color)
+                                    self.pieces.append(new_piece)
+                                    return 'white pawn'
+                                elif piece.position == final_position - 16:
+                                    self.pieces.remove(piece)
+                                    new_piece = ChessPiece('pawn', final_position, color)
+                                    self.pieces.append(new_piece)
+                                    return 'white pawn 16'
+                        else:
+                            if piece.position == final_position + 8:
                                 self.pieces.remove(piece)
                                 new_piece = ChessPiece('pawn', final_position, color)
                                 self.pieces.append(new_piece)
-                                return 'white pawn'
-                            elif piece.position == final_position - 16:
+                                return 'black pawn'
+                            elif piece.position == final_position + 16:
                                 self.pieces.remove(piece)
                                 new_piece = ChessPiece('pawn', final_position, color)
                                 self.pieces.append(new_piece)
-                                return 'white pawn 16'
-                    else:
-                        if piece.position == final_position + 8:
-                            self.pieces.remove(piece)
-                            new_piece = ChessPiece('pawn', final_position, color)
-                            self.pieces.append(new_piece)
-                            return 'black pawn'
-                        elif piece.position == final_position + 16:
-                            self.pieces.remove(piece)
-                            new_piece = ChessPiece('pawn', final_position, color)
-                            self.pieces.append(new_piece)
-                            return 'black pawn 16'
+                                return 'black pawn 16'
             elif move_type == 'pawn capture':
                 print(self.game_moves[num])
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
@@ -537,6 +551,16 @@ class NewGame:
                         self.rook_blocked_lines(piece)
                 print(rook_position, final_position)
 
+            elif move_type == 'two rooks capture':
+                try:
+                    rook_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][3]) + 1
+                except ValueError:
+                    rook_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(self.game_moves[num][1]) + 1
+                final_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(self.game_moves[num][3]) + 1
+                for piece in self.pieces:
+                    if piece.position == rook_position:
+                        self.piece_capture(rook_position, final_position)
+
             else:
                 pass
             return move_type
@@ -558,11 +582,12 @@ game_text = '''
 gt = '''
 1. e4 d5 2. e5 f5 3. exf6 Kf7
 '''
-
-ng = NewGame(game_text)
-ng.reading_game_history()
-for i in range(0, 77):
-    print(i, ng.game_moves[i])
-for i in range(0, 80):
-    print(i, ng.move(i))
-
+two_rooks_game = '1. h4 h5 2. Rh3 a6 3. a3 b6 4. a4 d5 5. Raa3 d4 6. g4 d3 7. Rhxd3'
+ng = NewGame(two_rooks_game)
+'''for i in range(0, 77):
+    print(i, ng.game_moves[i])'''
+for i in range(0, 13):
+    print(ng.move(i))
+for i in range(0, len(ng.pieces)):
+    if ng.pieces[i].piece_type == 'bishop':
+        print(i + 1, ng.pieces[i], ng.pieces[i].position)
