@@ -350,10 +350,8 @@ class NewGame:
             if piece.position == position:
                 piece_type = piece.piece_type
                 piece_color = piece.color
-                print('capturing piece', piece)
                 capturing_piece = piece
             elif piece.position == final_position:
-                print('captured piece', piece)
                 captured_piece = piece
             if None not in (capturing_piece, captured_piece):
                 break
@@ -362,7 +360,6 @@ class NewGame:
         self.pieces.remove(captured_piece)
         self.pieces.remove(capturing_piece)
         moved_capturing_piece = ChessPiece(piece_type, final_position, piece_color)
-        print('###########################', moved_capturing_piece)
         self.pieces.append(moved_capturing_piece)
 
     # reading moves history
@@ -374,29 +371,32 @@ class NewGame:
 
     def move_types(self, move):
         move_type = None
+        # game result
+        if re.fullmatch(r'1-0|0-1|1/2-1/2', move):
+            move_type = 'game finished'
         # pawn move
-        if re.fullmatch(r'[abcdefgh]\d', move):
+        if re.fullmatch(r'[abcdefgh]\d[+]?[#]?', move):
             move_type = 'pawn'
         # rook move
-        if re.fullmatch(r'R[a-z]\d', move):
+        if re.fullmatch(r'R[a-z]\d[+]?[#]?', move):
             move_type = 'rook'
         # knight move
-        if re.fullmatch(r'N[a-z]\d', move):
+        if re.fullmatch(r'N[a-z]\d[+]?[#]?', move):
             move_type = 'knight'
         # bishop move
-        if re.fullmatch(r'B[a-z]\d', move):
+        if re.fullmatch(r'B[a-z]\d[+]?[#]?', move):
             move_type = 'bishop'
         # queen move
-        if re.fullmatch(r'Q[a-z]\d', move):
+        if re.fullmatch(r'Q[a-z]\d[+]?[#]?', move):
             move_type = 'queen'
         # king move
-        if re.fullmatch(r'K[a-z]\d', move):
+        if re.fullmatch(r'K[a-z]\d[+]?[#]?', move):
             move_type = 'king'
         if move == 'O-O':
             move_type = 'short castle'
         if move == 'O-O-O':
             move_type = 'long castle'
-        if re.fullmatch(r'[abcdefgh|A-Z]x[abcdefgh]\d', move):
+        if re.fullmatch(r'[abcdefgh|A-Z]x[abcdefgh]\d[+]?[#]?', move):
             if move[0] in alphabet:
                 move_type = 'pawn capture'
             elif move[0] == 'R':
@@ -409,15 +409,13 @@ class NewGame:
                 move_type = 'queen capture'
             else:
                 move_type = 'king capture'
-        if re.fullmatch(r'R[abcdefgh|0-9][abcdefgh]\d', move):
+        if re.fullmatch(r'R[abcdefgh|0-9][abcdefgh]\d[+]?[#]?', move):
             move_type = 'pos'
-        if re.fullmatch(r'R\d[abcdefgh]\d', move) or re.fullmatch(r'R[abcdefgh][a-z]\d', move):
-            move_type = 'two rooks'
-        if re.fullmatch(r'R\dx[abcdefgh]\d', move) or re.fullmatch(r'R[abcdefgh]x[abcdefgh]\d', move):
-            move_type = 'two rooks capture'
-        '''if re.fullmatch(r'[a-z|A-Z][abcdefgh]x[a-z]\d', move):
-            move_type = 'pos2'
-            '''
+        if re.fullmatch(r'[R|N]\d[abcdefgh]\d[+]?[#]?', move) or re.fullmatch(r'[R|N][abcdefgh][a-z]\d[+]?[#]?', move):
+            move_type = 'two pieces'
+        if re.fullmatch(r'[R|N]\dx[abcdefgh]\d[+]?[#]?', move) or re.fullmatch(r'[R|N][abcdefgh]x[abcdefgh]\d[+]?[#]?',
+                                                                               move):
+            move_type = 'two pieces capture'
 
         return move_type
 
@@ -430,7 +428,14 @@ class NewGame:
 
         # finding move type
         move_type = self.move_types(self.game_moves[num])
-        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle', 'two rooks', 'two rooks capture'):
+        if move_type == 'game finished':
+            if self.game_moves[num] == '1-0':
+                return 'White won!'
+            elif self.game_moves[num] == '0-1':
+                return 'Black won!'
+            else:
+                return 'Draw'
+        if move_type not in ('pawn', 'pawn capture', 'short castle', 'long castle', 'two pieces', 'two pieces capture'):
             for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
@@ -444,17 +449,14 @@ class NewGame:
                             piece.finding_possible_moves()
                             self.pieces.append(piece)
                             if piece.piece_type == 'rook':
-                                print(piece)
                                 self.rook_blocked_lines(piece)
                             return move_type
                     elif piece.piece_type + ' capture' == move_type:
                         final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][2]) + 1
                         if piece.piece_type == 'rook':
-                            # print(piece)
                             self.rook_blocked_lines(piece)
                         if final_position in piece.possible_moves:
-                            print(piece, piece.position, final_position)
                             self.piece_capture(piece.position, final_position)
                             return move_type, len(self.pieces)
                     elif move_type == 'pos':
@@ -490,7 +492,6 @@ class NewGame:
                                 self.pieces.append(new_piece)
                                 return 'black pawn 16'
             elif move_type == 'pawn capture':
-                print(self.game_moves[num])
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
                 pawn_horizontal_position = alphabet.index(self.game_moves[num][0])
                 final_horizontal_position = alphabet.index(self.game_moves[num][2])
@@ -539,31 +540,36 @@ class NewGame:
                             rook.new_position(60)
                         if king:
                             king.new_position(59)
-            elif move_type == 'two rooks':
+            elif move_type == 'two piece':
                 try:
-                    rook_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
+                    piece_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(
+                        self.game_moves[num][2]) + 1
                 except ValueError:
-                    rook_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][1]) + 1
+                    piece_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
+                        self.game_moves[num][1]) + 1
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
                 for piece in self.pieces:
-                    if piece.position == rook_position:
+                    if piece.position == piece_position:
                         piece.new_position(final_position)
-                        self.rook_blocked_lines(piece)
-                print(rook_position, final_position)
+                        if piece.piece_type == 'rook':
+                            self.rook_blocked_lines(piece)
 
-            elif move_type == 'two rooks capture':
+
+            elif move_type == 'two rooks/knights capture':
                 try:
-                    rook_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][3]) + 1
+                    piece_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(
+                        self.game_moves[num][3]) + 1
                 except ValueError:
-                    rook_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(self.game_moves[num][1]) + 1
+                    piece_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(
+                        self.game_moves[num][1]) + 1
                 final_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(self.game_moves[num][3]) + 1
                 for piece in self.pieces:
-                    if piece.position == rook_position:
-                        self.piece_capture(rook_position, final_position)
+                    if piece.position == piece_position:
+                        self.piece_capture(piece_position, final_position)
 
             else:
                 pass
-            return move_type
+        return move_type
         # finding piece(s)
         # final field
 
@@ -583,11 +589,8 @@ gt = '''
 1. e4 d5 2. e5 f5 3. exf6 Kf7
 '''
 two_rooks_game = '1. h4 h5 2. Rh3 a6 3. a3 b6 4. a4 d5 5. Raa3 d4 6. g4 d3 7. Rhxd3'
-ng = NewGame(two_rooks_game)
-'''for i in range(0, 77):
-    print(i, ng.game_moves[i])'''
-for i in range(0, 13):
+ng = NewGame(game_text)
+for i in range(0, len(ng.game_moves)):
+    print(i, ng.game_moves[i])
+for i in range(0, len(ng.game_moves)):
     print(ng.move(i))
-for i in range(0, len(ng.pieces)):
-    if ng.pieces[i].piece_type == 'bishop':
-        print(i + 1, ng.pieces[i], ng.pieces[i].position)

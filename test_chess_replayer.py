@@ -15,9 +15,12 @@ test_game = '1. a4 Nc6 2. Ra3 Rb8 3. Rh3'
 
 two_rooks_game = '1. h4 h5 2. Rh3 a6 3. a3 b6 4. a4 d5 5. Raa3 d4 6. g4 d3 7. Rhxd3'
 
+two_knights_game = '1. Nf3 e5 2. Nc3 c5 3. Nxe5 f6 4. Nc4 d6 5. Ne4 g6 6. Nexd6+'
+
 new_game = NewGame(game_text)
 new_game_2 = NewGame(game_text)
 new_game_3 = NewGame(two_rooks_game)
+new_game_4 = NewGame(two_knights_game)
 
 
 def test_setting_pieces_for_new_game():
@@ -92,4 +95,10 @@ def test_rook_blocked_lines():
 def test_two_rooks_capture():
     for i in range(0, 13):
         new_game_3.move(i)
-    assert new_game_3.move(12) == 'two rooks capture'
+    assert new_game_3.move(12) == 'two pieces capture'
+
+
+def test_two_knights_capture():
+    for i in range(0, 11):
+        new_game_4.move(i)
+    assert new_game_4.move(10) == 'two pieces capture'
