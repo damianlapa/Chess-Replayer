@@ -18,7 +18,9 @@ test_game = '''
 32. Qe5 Qe8 33. a4 Qd8 34. R1f2 Qe8 35. R2f3 Qd8 36. Bd3 Qe8
 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
 '''
+test_2 = '1. e4 b5 2. h4 Nc6 3. d4 Rb8 4. g4'
 new_game = NewGame(test_game)
+
 
 class Board:
     def __init__(self, env):
@@ -64,17 +66,25 @@ class Board:
             create_line_description(str(i), 'white', 20, 25, 910 - 100 * i)
             create_line_description(str(i), 'white', 20, 875, 910 - 100 * i)
 
-    def move_piece(self, piece_to_move, new_position, piece_index):
-        print(piece_to_move, new_position)
+    def decode_position_number(self, position_number):
         text = ''
-        if piece_to_move % 8 != 0:
-            text += alphabet2[piece_to_move % 8 - 1]
-            text += str(piece_to_move // 8 + 1)
+        if position_number % 8 != 0:
+            text += alphabet2[position_number % 8 - 1]
+            text += str(position_number // 8 + 1)
         else:
             text += alphabet2[7]
-            text += str(piece_to_move // 8)
+            text += str(position_number // 8)
+        return text
+
+    def move_piece(self, piece_to_move, new_position, piece_index):
+        text = self.decode_position_number(piece_to_move)
+        text_2 = self.decode_position_number(new_position)
         tags = self.board.gettags(self.board.find_withtag(text)[0])
-        print(text)
+        try:
+            tags_2 = self.board.gettags(self.board.find_withtag(text_2)[0])
+            self.board.delete(self.board.find_withtag(text_2)[0])
+        except IndexError:
+            pass
         self.board.delete(self.board.find_withtag(text)[0])
         piece = self.pieces[piece_index]
         piece_image = piece.representation()
@@ -85,13 +95,14 @@ class Board:
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}'))
 
-
     def piece_move(self, event):
-        print(new_game.game_moves[self.counter])
         if new_game.game_moves[self.counter] == 'O-O':
-            print(new_game.move(self.counter))
-        a, b, c = new_game.move(self.counter)
-        self.move_piece(a, b, c)
+            a, b, c, d, e, f = new_game.move(self.counter)
+            self.move_piece(a, b, c)
+            self.move_piece(d, e, f)
+        else:
+            a, b, c = new_game.move(self.counter)
+            self.move_piece(a, b, c)
         self.counter += 1
 
     def display(self):
@@ -100,8 +111,8 @@ class Board:
             piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
             piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                     piece.position // 8 - 1) * 100
-            self.board.create_image(piece_x, piece_y, image=piece_image, tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}'))
-            print(piece.position, piece.piece_notation_position())
+            self.board.create_image(piece_x, piece_y, image=piece_image,
+                                    tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}'))
         self.board.bind('<1>', self.piece_move)
         self.env.mainloop()
 

@@ -1,4 +1,4 @@
-from game import ChessBoard, ChessPiece, NewGame
+from game import ChessPiece, NewGame
 
 game_text = '''
 1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
