@@ -1,15 +1,7 @@
 import re
+from PIL import Image, ImageTk
 
 alphabet = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
-
-
-class ChessBoard:
-    def __init__(self, pieces=None):
-        # creating fields
-        for y in range(1, 9)[::-1]:
-            for x in range(0, 8):
-                field_nr = 8 * (y - 1) + x + 1
-        self.border_fields = ()
 
 
 class ChessPiece:
@@ -20,9 +12,15 @@ class ChessPiece:
         self.possible_moves = []
         self.border_fields = ()
         self.finding_possible_moves()
+        self.image = None
 
     def __str__(self):
-        return self.color + self.piece_type + self.piece_notation_position()
+        return self.color + self.piece_type
+
+    def representation(self):
+        if not self.image:
+            self.image = ImageTk.PhotoImage(Image.open("pieces/{}.png".format(self)))
+        return self.image
 
     def piece_notation_position(self):
         text = ''
@@ -39,13 +37,13 @@ class ChessPiece:
         fields_north = []
         fields_east = []
         fields_west = []
-        i = 1
-        while i < 9:
-            fields_south.append(i)
-            fields_north.append(56 + i)
-            fields_west.append(1 + (i - 1) * 8)
-            fields_east.append(8 + (i - 1) * 8)
-            i += 1
+        z = 1
+        while z < 9:
+            fields_south.append(z)
+            fields_north.append(56 + z)
+            fields_west.append(1 + (z - 1) * 8)
+            fields_east.append(8 + (z - 1) * 8)
+            z += 1
         self.border_fields = tuple(set(fields_east + fields_south + fields_west + fields_north))
         return self.border_fields
 
@@ -84,10 +82,6 @@ class ChessPiece:
         # knight move
         elif self.piece_type == 'knight':
             # decode field number to chess board field
-            column = self.position % 8
-            row = self.position // 8
-            if column == 0:
-                row = row - 1
             # possible knight moves
             # west moves
             if self.position % 8 not in (0, 7):
@@ -245,7 +239,6 @@ class NewGame:
         self.pieces = []
         self.game_description = game_description
         self.set_all_pieces()
-        self.board = ChessBoard(self.pieces)
         self.game_moves = []
         self.reading_game_history()
 
@@ -444,13 +437,14 @@ class NewGame:
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
                         if final_position in piece.possible_moves:
+                            old_position = piece.position
                             self.pieces.remove(piece)
                             piece.new_position(final_position)
                             piece.finding_possible_moves()
                             self.pieces.append(piece)
                             if piece.piece_type == 'rook':
                                 self.rook_blocked_lines(piece)
-                            return move_type
+                            return old_position, piece.position, self.pieces.index(piece)
                     elif piece.piece_type + ' capture' == move_type:
                         final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][2]) + 1
@@ -471,26 +465,30 @@ class NewGame:
                         if color == 'white':
                             if piece.color == color:
                                 if piece.position == final_position - 8:
+                                    old_position = piece.position
                                     self.pieces.remove(piece)
-                                    new_piece = ChessPiece('pawn', final_position, color)
-                                    self.pieces.append(new_piece)
-                                    return 'white pawn'
+                                    piece.new_position(final_position)
+                                    self.pieces.append(piece)
+                                    return old_position, piece.position, self.pieces.index(piece)
                                 elif piece.position == final_position - 16:
+                                    old_position = piece.position
                                     self.pieces.remove(piece)
-                                    new_piece = ChessPiece('pawn', final_position, color)
-                                    self.pieces.append(new_piece)
-                                    return 'white pawn 16'
+                                    piece.new_position(final_position)
+                                    self.pieces.append(piece)
+                                    return old_position, piece.position, self.pieces.index(piece)
                         else:
                             if piece.position == final_position + 8:
+                                old_position = piece.position
                                 self.pieces.remove(piece)
-                                new_piece = ChessPiece('pawn', final_position, color)
-                                self.pieces.append(new_piece)
-                                return 'black pawn'
+                                piece.new_position(final_position)
+                                self.pieces.append(piece)
+                                return old_position, piece.position, self.pieces.index(piece)
                             elif piece.position == final_position + 16:
+                                old_position = piece.position
                                 self.pieces.remove(piece)
-                                new_piece = ChessPiece('pawn', final_position, color)
-                                self.pieces.append(new_piece)
-                                return 'black pawn 16'
+                                piece.new_position(final_position)
+                                self.pieces.append(piece)
+                                return old_position, piece.position, self.pieces.index(piece)
             elif move_type == 'pawn capture':
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
                 pawn_horizontal_position = alphabet.index(self.game_moves[num][0])
@@ -553,7 +551,6 @@ class NewGame:
                         piece.new_position(final_position)
                         if piece.piece_type == 'rook':
                             self.rook_blocked_lines(piece)
-
 
             elif move_type == 'two rooks/knights capture':
                 try:
