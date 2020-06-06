@@ -48,10 +48,10 @@ class Board:
             for y in range(0, 8):
                 if y % 2 == 0:
                     create_field('#ffd699', 200 * x, 100 * y)
-                    self.board.create_text((200 * x) + 25, 100 * y + 25, text=str(((7 - y) * 8 + x * 2) + 1))
+                    # self.board.create_text((200 * x) + 25, 100 * y + 25, text=str(((7 - y) * 8 + x * 2) + 1))
                 else:
                     create_field('#ffd699', (200 * x) + 100, 100 * y)
-                    self.board.create_text((200 * x) + 125, 100 * y + 25, text=str((7 - y) * 8 + (x + 1) * 2))
+                    # self.board.create_text((200 * x) + 125, 100 * y + 25, text=str((7 - y) * 8 + (x + 1) * 2))
 
         alphabet = ('A', 'B', 'C', 'D', 'E', 'F', 'G', 'H')
 
@@ -77,6 +77,12 @@ class Board:
         return text
 
     def move_piece(self, piece_to_move, new_position, piece_index):
+        field = self.board.find_withtag('field')
+        old_field = self.board.find_withtag('old_field')
+        if old_field:
+            self.board.delete(old_field[0])
+        if field:
+            self.board.delete(field[0])
         text = self.decode_position_number(piece_to_move)
         text_2 = self.decode_position_number(new_position)
         tags = self.board.gettags(self.board.find_withtag(text)[0])
@@ -88,14 +94,20 @@ class Board:
         self.board.delete(self.board.find_withtag(text)[0])
         piece = self.pieces[piece_index]
         piece_image = piece.representation()
+        piece_old_x = (piece_to_move % 8 - 1) * 100 + 50 if piece_to_move % 8 != 0 else 750
+        piece_old_y = 800 - (piece_to_move // 8) * 100 - 50 if piece_to_move % 8 != 0 else 750 - (
+                piece_to_move // 8 - 1) * 100
         piece.new_position(new_position)
         piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
         piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                 piece.position // 8 - 1) * 100
+        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='green', tag='field')
+        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50, fill='yellow', tag='old_field')
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}'))
 
     def piece_move(self, event):
+
         if new_game.game_moves[self.counter] == 'O-O':
             a, b, c, d, e, f = new_game.move(self.counter)
             self.move_piece(a, b, c)
