@@ -19,7 +19,10 @@ test_game = '''
 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
 '''
 test_2 = '1. e4 b5 2. h4 Nc6 3. d4 Rb8 4. g4'
-new_game = NewGame(test_game)
+test_3 = '''1. h4 e5 2. e4 f5 3. Qh5+ g6 4. Nc3 Ne7
+5. Qxg6+ Nxg6 6. Ke2 Qxh4 7. Kf3 Qh3+ 8. g3 Nh4+
+9. Ke3 f4+ 10. Ke2 b6 11. b3 Ba6+ 12. Kd1 Qxf1#'''
+new_game = NewGame(test_3)
 
 
 class Board:
@@ -42,7 +45,7 @@ class Board:
         # create fields
 
         def create_field(color, x_start, y_start):
-            self.board.create_rectangle(x_start, y_start, x_start + 100, y_start + 100, fill=color)
+            self.board.create_rectangle(x_start, y_start, x_start + 100, y_start + 100, fill=color, outline='')
 
         for x in range(0, 4):
             for y in range(0, 8):
@@ -101,21 +104,37 @@ class Board:
         piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
         piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                 piece.position // 8 - 1) * 100
-        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field')
-        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50, fill='#D9AF2D', tag='old_field')
+        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field', outline='')
+        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50, fill='#D9AF2D', tag='old_field', outline='')
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
     def piece_move(self, event):
+        field_check = self.board.find_withtag('field_check')
+        if field_check:
+            self.board.delete(field_check[0])
 
         if new_game.game_moves[self.counter] == 'O-O':
             a, b, c, d, e, f = new_game.move(self.counter)
             self.move_piece(a, b, c)
             self.move_piece(d, e, f)
         else:
-            print(new_game.game_moves[self.counter])
             a, b, c = new_game.move(self.counter)
             self.move_piece(a, b, c)
+            if new_game.game_moves[self.counter][-1] in ('+', '#'):
+                color = 'black' if self.counter % 2 == 0 else 'white'
+                print(color)
+                print('check')
+                for piece in self.pieces:
+                    if piece.color == color and piece.piece_type == 'king':
+                        king_position = self.decode_position_number(piece.position)
+                        piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
+                        piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
+                                piece.position // 8 - 1) * 100
+                        fill = '#FF8269' if new_game.game_moves[self.counter][-1] == '+' else '#FF2D03'
+                        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50,
+                                                    fill=fill, tag='field_check', outline='')
+                        self.board.lift(self.board.find_withtag(king_position)[0])
         self.counter += 1
 
     def temp_situation(self, event):
