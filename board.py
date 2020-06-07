@@ -101,10 +101,10 @@ class Board:
         piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
         piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                 piece.position // 8 - 1) * 100
-        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='green', tag='field')
-        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50, fill='yellow', tag='old_field')
+        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field')
+        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50, fill='#D9AF2D', tag='old_field')
         self.board.create_image(piece_x, piece_y, image=piece_image,
-                                tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}'))
+                                tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
     def piece_move(self, event):
 
@@ -113,9 +113,32 @@ class Board:
             self.move_piece(a, b, c)
             self.move_piece(d, e, f)
         else:
+            print(new_game.game_moves[self.counter])
             a, b, c = new_game.move(self.counter)
             self.move_piece(a, b, c)
         self.counter += 1
+
+    def temp_situation(self, event):
+        move_number = self.counter - 1
+        self.counter = 0
+        all_pieces = self.board.find_withtag('piece')
+        for piece in all_pieces:
+            self.board.delete(piece)
+        new_game.reset()
+        self.pieces = new_game.pieces
+        for piece in self.pieces:
+            piece_image = piece.representation()
+            piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
+            piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
+                    piece.position // 8 - 1) * 100
+            self.board.create_image(piece_x, piece_y, image=piece_image,
+                                    tags=(
+                                        f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
+        for _ in range(0, move_number):
+            self.piece_move(event)
+
+
+
 
     def display(self):
         for piece in self.pieces:
@@ -124,8 +147,9 @@ class Board:
             piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                     piece.position // 8 - 1) * 100
             self.board.create_image(piece_x, piece_y, image=piece_image,
-                                    tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}'))
+                                    tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
         self.board.bind('<1>', self.piece_move)
+        self.board.bind('<3>', self.temp_situation)
         self.env.mainloop()
 
 
