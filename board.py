@@ -22,19 +22,43 @@ test_2 = '1. e4 b5 2. h4 Nc6 3. d4 Rb8 4. g4'
 test_3 = '''1. h4 e5 2. e4 f5 3. Qh5+ g6 4. Nc3 Ne7
 5. Qxg6+ Nxg6 6. Ke2 Qxh4 7. Kf3 Qh3+ 8. g3 Nh4+
 9. Ke3 f4+ 10. Ke2 b6 11. b3 Ba6+ 12. Kd1 Qxf1#'''
-new_game = NewGame(test_3)
+new_game = NewGame(test_game)
 
 
 class Board:
     def __init__(self, env):
         self.env = env
-        self.env.geometry('1000x1000')
+        self.env.geometry('1500x1000')
         self.env.configure(bg='black')
         self.board = None
         self.description = None
         self.drawing_board()
         self.pieces = new_game.pieces
         self.counter = 0
+        self.game_desc_window = Canvas(self.env, width=450, height=350, bg='#FFF9BC')
+        self.game_desc_window.place(x=975, y=250)
+        self.row = 1
+        self.game_description()
+
+    def game_description(self):
+        text = ''
+        row = 0
+        move = 1
+        print(len(new_game.game_moves))
+        for i in range(0, len(new_game.game_moves)):
+            print(i)
+            if i % 2 == 0:
+                text += '{}. '.format(move)
+                move += 1
+            text += new_game.game_moves[i] + ' '
+            if i != 0:
+                if (i + 1) % 8 == 0 or (i + 1) == len(new_game.game_moves):
+                    print(i)
+                    row += 1
+                    self.game_desc_window.create_text(10, row * 20, text=text, fill='black', font=('Arial bold', 12),
+                                                      anchor=W)
+                    text = ''
+
 
     def drawing_board(self):
         self.description = Canvas(self.env, bg='black', width=900, height=900)
@@ -104,8 +128,10 @@ class Board:
         piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
         piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                 piece.position // 8 - 1) * 100
-        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field', outline='')
-        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50, fill='#D9AF2D', tag='old_field', outline='')
+        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field',
+                                    outline='')
+        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50,
+                                    fill='#D9AF2D', tag='old_field', outline='')
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
@@ -155,9 +181,6 @@ class Board:
                                         f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
         for _ in range(0, move_number):
             self.piece_move(event)
-
-
-
 
     def display(self):
         for piece in self.pieces:
