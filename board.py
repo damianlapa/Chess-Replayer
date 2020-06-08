@@ -44,7 +44,6 @@ class Board:
         text = ''
         row = 0
         move = 1
-        print(len(new_game.game_moves))
         for i in range(0, len(new_game.game_moves)):
             print(i)
             if i % 2 == 0:
@@ -55,10 +54,13 @@ class Board:
                 if (i + 1) % 8 == 0 or (i + 1) == len(new_game.game_moves):
                     print(i)
                     row += 1
-                    self.game_desc_window.create_text(10, row * 20, text=text, fill='black', font=('Arial bold', 12),
-                                                      anchor=W)
+                    text_row = self.game_desc_window.create_text(10, row * 20, text=text, fill='black',
+                                                                 font=('Arial bold', 12),
+                                                                 anchor=W, tag='move-{}'.format(i + 1))
+                    print(self.game_desc_window.bbox(text_row))
+                    self.game_desc_window.create_rectangle(self.game_desc_window.bbox(text_row), fill='white', outline='')
+                    self.game_desc_window.tag_raise(text_row)
                     text = ''
-
 
     def drawing_board(self):
         self.description = Canvas(self.env, bg='black', width=900, height=900)
