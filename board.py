@@ -40,7 +40,45 @@ class Board:
         self.row = 1
         self.game_description()
 
+    def set_counter(self, event, num):
+        self.counter = num + 2
+        self.temp_situation(event)
+
     def game_description(self):
+        move_number = 1
+        row = 1
+        for i in range(0, len(new_game.game_moves)):
+            if i % 8 == 0:
+                if i != 0:
+                    row += 1
+            if i % 2 == 0:
+                if i == 0:
+                    self.game_desc_window.create_text(10, row * 20, text=f'{move_number}.', fill='black',
+                                                      font=('Arial bold', 12), anchor=W,
+                                                      tag='move_nr{}'.format(move_number))
+                    move_number += 1
+                else:
+                    if i % 8 != 0:
+                        x = self.game_desc_window.bbox(self.game_desc_window.find_withtag(f'move{i - 1}'))[2]
+                    else:
+                        x = 5
+                    self.game_desc_window.create_text(x + 5, row * 20, text=f'{move_number}.', fill='black',
+                                                      font=('Arial bold', 12), anchor=W,
+                                                      tag='move_nr{}'.format(move_number))
+                    move_number += 1
+                    pass
+                x = self.game_desc_window.bbox(self.game_desc_window.find_withtag(f'move_nr{move_number - 1}'))[2]
+                self.game_desc_window.create_text(x + 5, row * 20, text=f'{new_game.game_moves[i]}', fill='black',
+                                                  font=('Arial bold', 12), anchor=W, tag='move{}'.format(i))
+            else:
+
+                x = self.game_desc_window.bbox(self.game_desc_window.find_withtag(f'move{i - 1}'))[2]
+                self.game_desc_window.create_text(x + 5, row * 20, text=f'{new_game.game_moves[i]}', fill='black',
+                                                  font=('Arial bold', 12), anchor=W, tag='move{}'.format(i))
+
+            self.game_desc_window.tag_bind('move{}'.format(i), '<1>', lambda event, i=i: self.set_counter(event, i))
+
+        '''
         text = ''
         row = 0
         move = 1
@@ -61,6 +99,7 @@ class Board:
                     self.game_desc_window.create_rectangle(self.game_desc_window.bbox(text_row), fill='white', outline='')
                     self.game_desc_window.tag_raise(text_row)
                     text = ''
+                    '''
 
     def drawing_board(self):
         self.description = Canvas(self.env, bg='black', width=900, height=900)
@@ -138,6 +177,13 @@ class Board:
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
     def piece_move(self, event):
+        current_move = self.game_desc_window.find_withtag('current_move')
+        if current_move:
+            self.game_desc_window.delete(current_move)
+        desc = self.game_desc_window.find_withtag('move{}'.format(self.counter))
+        self.game_desc_window.create_rectangle(self.game_desc_window.bbox(desc), fill='#E9967A', tag='current_move',
+                                               outline='')
+        self.game_desc_window.tag_raise(desc)
         field_check = self.board.find_withtag('field_check')
         if field_check:
             self.board.delete(field_check[0])
