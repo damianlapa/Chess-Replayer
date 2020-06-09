@@ -417,7 +417,6 @@ class NewGame:
         return move_type
 
     def move(self, num):
-        print(self.game_moves[num])
         # finding side color
         if num % 2 == 0:
             color = 'white'
