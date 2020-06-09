@@ -278,6 +278,7 @@ class NewGame:
     def rook_blocked_lines(self, rook):
         rook.possible_moves = []
         rook.finding_possible_moves()
+        index = self.pieces.index(rook)
         self.pieces.remove(rook)
         blocked_horizontal_line_east = False
         blocked_horizontal_line_west = False
@@ -333,7 +334,7 @@ class NewGame:
                 blocked_vertical_line_south = True
             if blocked_vertical_line_north_by_opponent_piece:
                 blocked_vertical_line_north = True
-        self.pieces.append(rook)
+        self.pieces.insert(index, rook)
         return rook.possible_moves
 
     # capturing a piece
@@ -438,6 +439,7 @@ class NewGame:
             for piece in self.pieces:
                 if piece.piece_type == 'rook':
                     self.rook_blocked_lines(piece)
+                    print(piece, piece.possible_moves)
             for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
@@ -445,6 +447,7 @@ class NewGame:
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
                         if final_position in piece.possible_moves:
+                            print(piece.possible_moves)
                             old_position = piece.position
                             self.pieces.remove(piece)
                             piece.new_position(final_position)
