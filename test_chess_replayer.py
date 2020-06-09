@@ -69,6 +69,7 @@ def test_piece_notation_position():
            piece_3.piece_notation_position() == 'e5'
 
 
+
 def test_possible_black_pawns_moves():
     black_pawn_1 = ChessPiece('pawn', 50, 'black')
     black_pawn_2 = ChessPiece('pawn', 20, 'black')
