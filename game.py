@@ -367,6 +367,7 @@ class NewGame:
                 self.game_moves.append(move)
 
     def move_types(self, move):
+        print(move)
         move_type = None
         # game result
         if re.fullmatch(r'1-0|0-1|1/2-1/2', move):
@@ -412,8 +413,8 @@ class NewGame:
             move_type = 'two pieces'
         if re.fullmatch(r'[R|N]\dx[abcdefgh]\d[+]?[#]?', move) or re.fullmatch(r'[R|N][abcdefgh]x[abcdefgh]\d[+]?[#]?',
                                                                                move):
-            move_type = 'two pieces capture'
-
+            move_type = 'two rooks/knights capture'
+        print(move_type)
         return move_type
 
     def move(self, num):
@@ -435,10 +436,12 @@ class NewGame:
         if move_type not in (
                 'pawn', 'pawn capture', 'short castle', 'long castle', 'two pieces', 'two rooks/knights capture'):
             for piece in self.pieces:
+                if piece.piece_type == 'rook':
+                    self.rook_blocked_lines(piece)
+            for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
-                        if piece.piece_type == 'rook':
-                            self.rook_blocked_lines(piece)
+
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
                         if final_position in piece.possible_moves:
@@ -447,8 +450,6 @@ class NewGame:
                             piece.new_position(final_position)
                             piece.finding_possible_moves()
                             self.pieces.append(piece)
-                            if piece.piece_type == 'rook':
-                                self.rook_blocked_lines(piece)
                             return old_position, piece.position, self.pieces.index(piece)
                     elif piece.piece_type + ' capture' == move_type:
                         final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(
@@ -566,23 +567,51 @@ class NewGame:
                                    rook_new_position, rook_index
 
             elif move_type == 'long castle':
+                rook = None
+                king = None
+                king_old_position = None
+                king_new_position = None
+                king_index = None
+                rook_old_position = None
+                rook_new_position = None
+                rook_index = None
                 for piece in self.pieces:
                     if color == 'white':
-                        rook = piece if piece.position == 1 else None
-                        king = piece if piece.position == 5 else None
-                        if rook:
+                        if not rook:
+                            rook = piece if piece.position == 1 else None
+                            if rook:
+                                rook_old_position = piece.position
+                        if not king:
+                            king = piece if piece.position == 5 else None
+                            if king:
+                                king_old_position = piece.position
+                        if rook and king:
                             rook.new_position(4)
-                        if king:
                             king.new_position(3)
+                            king_new_position = king.position
+                            rook_new_position = rook.position
+                            king_index = self.pieces.index(king)
+                            rook_index = self.pieces.index(rook)
+                            return king_old_position, king_new_position, king_index, rook_old_position, \
+                                   rook_new_position, rook_index
                     else:
-                        rook = piece if piece.position == 57 else None
-                        king = piece if piece.position == 61 else None
-                        if rook:
+                        if not rook:
+                            rook = piece if piece.position == 57 else None
+                            if rook:
+                                rook_old_position = piece.position
+                        if not king:
+                            king = piece if piece.position == 61 else None
+                            if king:
+                                king_old_position = piece.position
+                        if rook and king:
                             rook.new_position(60)
-                        if king:
                             king.new_position(59)
-
-                return 1, 1, 1
+                            king_new_position = king.position
+                            rook_new_position = rook.position
+                            king_index = self.pieces.index(king)
+                            rook_index = self.pieces.index(rook)
+                            return king_old_position, king_new_position, king_index, rook_old_position, \
+                                   rook_new_position, rook_index
 
             elif move_type == 'two pieces':
                 index = None
@@ -618,21 +647,39 @@ class NewGame:
                 return piece_position, final_position, index
 
             elif move_type == 'two rooks/knights capture':
+                index = None
+                piece_position = None
                 try:
                     piece_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(
                         self.game_moves[num][3]) + 1
                 except ValueError:
-                    piece_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(
-                        self.game_moves[num][1]) + 1
+                    if self.game_moves[num][0] == 'R':
+                        piece_type = 'rook'
+                    else:
+                        piece_type = 'knight'
+                    for piece in self.pieces:
+                        if piece.color == color:
+                            if piece.piece_type == piece_type:
+                                possible_positions = []
+                                for x in range(0, 8):
+                                    possible_field = (alphabet.index(self.game_moves[num][1]) + 1) + x * 8
+                                    possible_positions.append(possible_field)
+                                if piece.position in possible_positions:
+                                    piece_position = piece.position
                 final_position = (int(self.game_moves[num][4]) - 1) * 8 + alphabet.index(self.game_moves[num][3]) + 1
                 for piece in self.pieces:
                     if piece.position == piece_position:
                         self.piece_capture(piece_position, final_position)
 
+                for piece in self.pieces:
+                    if piece.position == final_position:
+                        index = self.pieces.index(piece)
+
+                return piece_position, final_position, index
+
+
             else:
                 pass
-
-
 
 
 test_game = '''
@@ -646,4 +693,3 @@ test_game = '''
 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
 '''
 test_2 = '1. e4 b5 2. h4 Nc6 3. d4 Rb8 4. g4'
-

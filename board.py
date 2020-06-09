@@ -26,6 +26,7 @@ class GameMenu:
         self.game = None
         self.game_board = None
         self.game_frame = None
+        self.text = None
         self.run_game()
 
     def main_menu(self):
@@ -38,6 +39,8 @@ class GameMenu:
         self.load_exemplary_game.place(x=100, y=100)
         self.load_game_button = Button(self.env, text='Paste Game Description')
         self.load_game_button.place(x=300, y=100)
+        '''self.text = Text(self.main_canvas, width=75, height=75)
+        self.text.place(x=0, y=0)'''
 
     def load_game(self):
         test_game = '''
@@ -50,6 +53,7 @@ class GameMenu:
         32. Qe5 Qe8 33. a4 Qd8 34. R1f2 Qe8 35. R2f3 Qd8 36. Bd3 Qe8
         37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
         '''
+        # game_game = self.text.get('1.0', 'end-1c')
         self.game = NewGame(test_game)
         self.main_canvas.place_forget()
         self.load_exemplary_game.place_forget()
