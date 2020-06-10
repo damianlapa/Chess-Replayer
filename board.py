@@ -94,7 +94,8 @@ class Board:
 
     def set_counter(self, event, num):
         self.counter = num + 2
-        self.temp_situation(event)
+        self.temp_situation()
+        self.board.focus_set()
 
     def game_description(self):
         move_number = 1
@@ -205,7 +206,13 @@ class Board:
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
-    def piece_move(self, event):
+    def left_click(self, event):
+        self.piece_move()
+
+    def right_click(self, event):
+        self.temp_situation()
+
+    def piece_move(self):
         current_move = self.game_desc_window.find_withtag('current_move')
         if current_move:
             self.game_desc_window.delete(current_move)
@@ -258,7 +265,9 @@ class Board:
         if self.counter == len(self.game.game_moves):
             self.counter = len(self.game.game_moves) - 1
 
-    def temp_situation(self, event):
+        self.board.focus_set()
+
+    def temp_situation(self):
         move_number = self.counter - 1 if self.counter > 0 else 0
         self.counter = 0
         all_pieces = self.board.find_withtag('piece')
@@ -275,7 +284,9 @@ class Board:
                                     tags=(
                                         f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
         for _ in range(0, move_number):
-            self.piece_move(event)
+            self.piece_move()
+
+        self.board.focus_set()
 
     def display(self):
         for piece in self.pieces:
@@ -285,8 +296,13 @@ class Board:
                     piece.position // 8 - 1) * 100
             self.board.create_image(piece_x, piece_y, image=piece_image,
                                     tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
-        self.board.bind('<1>', self.piece_move)
-        self.board.bind('<3>', self.temp_situation)
+
+        self.board.focus_set()
+
+        self.board.bind('<1>', self.left_click)
+        self.board.bind('<3>', self.right_click)
+        self.board.bind('<Right>', self.left_click)
+        self.board.bind('<Left>', self.right_click)
         self.env.mainloop()
 
     def quit(self):
