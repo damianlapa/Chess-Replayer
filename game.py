@@ -368,7 +368,6 @@ class NewGame:
                 self.game_moves.append(move)
 
     def move_types(self, move):
-        print(move)
         move_type = None
         # game result
         if re.fullmatch(r'1-0|0-1|1/2-1/2', move):
@@ -415,7 +414,6 @@ class NewGame:
         if re.fullmatch(r'[R|N]\dx[abcdefgh]\d[+]?[#]?', move) or re.fullmatch(r'[R|N][abcdefgh]x[abcdefgh]\d[+]?[#]?',
                                                                                move):
             move_type = 'two rooks/knights capture'
-        print(move_type)
         return move_type
 
     def move(self, num):
@@ -439,7 +437,6 @@ class NewGame:
             for piece in self.pieces:
                 if piece.piece_type == 'rook':
                     self.rook_blocked_lines(piece)
-                    print(piece, piece.possible_moves)
             for piece in self.pieces:
                 if piece.color == color:
                     if piece.piece_type == move_type:
@@ -447,7 +444,6 @@ class NewGame:
                         final_position = (int(self.game_moves[num][2]) - 1) * 8 + alphabet.index(
                             self.game_moves[num][1]) + 1
                         if final_position in piece.possible_moves:
-                            print(piece.possible_moves)
                             old_position = piece.position
                             self.pieces.remove(piece)
                             piece.new_position(final_position)

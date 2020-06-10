@@ -8,8 +8,6 @@ black_pawn = ChessPiece('pawn', 55, 'black')
 
 alphabet2 = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 
-
-
 test_3 = '''1. h4 e5 2. e4 f5 3. Qh5+ g6 4. Nc3 Ne7
 5. Qxg6+ Nxg6 6. Ke2 Qxh4 7. Kf3 Qh3+ 8. g3 Nh4+
 9. Ke3 f4+ 10. Ke2 b6 11. b3 Ba6+ 12. Kd1 Qxf1#'''
@@ -78,6 +76,7 @@ class GameMenu:
         self.main_menu()
         self.env.mainloop()
 
+
 class Board:
     def __init__(self, env, game_):
         self.env = env
@@ -130,7 +129,6 @@ class Board:
                                                   font=('Arial bold', 12), anchor=W, tag='move{}'.format(i))
 
             self.game_desc_window.tag_bind('move{}'.format(i), '<1>', lambda event, i=i: self.set_counter(event, i))
-
 
     def drawing_board(self):
         self.description = Canvas(self.env, bg='black', width=900, height=900)
@@ -211,18 +209,36 @@ class Board:
         current_move = self.game_desc_window.find_withtag('current_move')
         if current_move:
             self.game_desc_window.delete(current_move)
-        desc = self.game_desc_window.find_withtag('move{}'.format(self.counter))
-        self.game_desc_window.create_rectangle(self.game_desc_window.bbox(desc), fill='#E9967A', tag='current_move',
-                                               outline='')
-        self.game_desc_window.tag_raise(desc)
         field_check = self.board.find_withtag('field_check')
+        try:
+            desc = self.game_desc_window.find_withtag('move{}'.format(self.counter))
+            self.game_desc_window.create_rectangle(self.game_desc_window.bbox(desc), fill='#E9967A', tag='current_move',
+                                                   outline='')
+            self.game_desc_window.tag_raise(desc)
+
+        except IndexError:
+            pass
         if field_check:
             self.board.delete(field_check[0])
 
+        end_condition = self.board.find_withtag('game_finished')
+        if end_condition:
+            self.board.delete(end_condition[0])
         if self.game.game_moves[self.counter] == 'O-O':
             a, b, c, d, e, f = self.game.move(self.counter)
             self.move_piece(a, b, c)
             self.move_piece(d, e, f)
+        elif self.game.game_moves[self.counter] in ('1-0', '0-1', '1/2-1/2'):
+            if not end_condition:
+                if self.game.game_moves[self.counter] == '1-0':
+                    self.board.create_text(400, 400, fill='#CBCBCB', font=('Verdana bold', 66), text='White won!',
+                                           tag='game_finished')
+                elif self.game.game_moves[self.counter] == '0-1':
+                    self.board.create_text(400, 400, fill='#363636', font=('Verdana bold', 66), text='Black won!',
+                                           tag='game_finished')
+                else:
+                    self.board.create_text(400, 400, fill='#818181', font=('Verdana bold', 66), text='DRAW!',
+                                           tag='game_finished')
         else:
             a, b, c = self.game.move(self.counter)
             self.move_piece(a, b, c)
@@ -239,9 +255,11 @@ class Board:
                                                     fill=fill, tag='field_check', outline='')
                         self.board.lift(self.board.find_withtag(king_position)[0])
         self.counter += 1
+        if self.counter == len(self.game.game_moves):
+            self.counter = len(self.game.game_moves) - 1
 
     def temp_situation(self, event):
-        move_number = self.counter - 1
+        move_number = self.counter - 1 if self.counter > 0 else 0
         self.counter = 0
         all_pieces = self.board.find_withtag('piece')
         for piece in all_pieces:
