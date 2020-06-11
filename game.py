@@ -681,6 +681,42 @@ class NewGame:
                 pass
 
 
+class TwoPlayersGame:
+    def __init__(self):
+        self.pieces = []
+        self.set_all_pieces()
+
+    def set_all_pieces(self):
+        for i in range(0, 8):
+            pawn = ChessPiece('pawn', 9 + i)
+            self.pieces.append(pawn)
+            black_pawn = ChessPiece('pawn', 49 + i, 'black')
+            self.pieces.append(black_pawn)
+        for i in range(0, 2):
+            piece = ChessPiece('rook', 1 + i * 7)
+            black_piece = ChessPiece('rook', 57 + i * 7, 'black')
+            self.pieces.append(piece)
+            self.pieces.append(black_piece)
+        for i in range(0, 2):
+            piece = ChessPiece('knight', 2 + i * 5)
+            black_piece = ChessPiece('knight', 58 + i * 5, 'black')
+            self.pieces.append(piece)
+            self.pieces.append(black_piece)
+        for i in range(0, 2):
+            piece = ChessPiece('bishop', 3 + i * 3)
+            black_piece = ChessPiece('bishop', 59 + i * 3, 'black')
+            self.pieces.append(piece)
+            self.pieces.append(black_piece)
+        white_queen = ChessPiece('king', 5)
+        white_king = ChessPiece('queen', 4)
+        black_queen = ChessPiece('king', 61, 'black')
+        black_king = ChessPiece('queen', 60, 'black')
+        self.pieces.append(white_queen)
+        self.pieces.append(white_king)
+        self.pieces.append(black_king)
+        self.pieces.append(black_queen)
+
+
 test_game = '''
 1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
 7. Bh4 b6 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 11. Rc1 Be6

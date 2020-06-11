@@ -1,6 +1,6 @@
 from tkinter import *
 from PIL import Image, ImageTk
-from game import ChessPiece, NewGame
+from game import ChessPiece, NewGame, TwoPlayersGame
 
 white_pawn = ChessPiece('pawn', 9)
 white_pawn_2 = ChessPiece('pawn', 13)
@@ -26,6 +26,7 @@ class GameMenu:
         self.game_board = None
         self.game_frame = None
         self.game_text_window = None
+        self.two_players_button = None
         self.run_game()
 
     def main_menu(self):
@@ -38,6 +39,20 @@ class GameMenu:
         self.load_exemplary_game_button.place(x=50, y=50)
         self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
         self.load_game_button.place(x=50, y=100)
+        self.two_players_button = Button(self.env, text='2 Players Game', command=self.two_players_game)
+        self.two_players_button.place(x=50, y=150)
+
+    def two_players_game(self):
+        self.main_canvas.place_forget()
+        self.load_exemplary_game_button.place_forget()
+        self.load_game_button.place_forget()
+        self.env.geometry('1550x1000')
+        self.env.configure(bg='black')
+        self.return_button = Button(self.env, text='X', command=self.return_to_menu)
+        self.return_button.place(x=1510, y=25)
+        self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
+        self.game_frame.place(x=0, y=0)
+        self.game = Board(self.env, TwoPlayersGame(), '2')
 
     def display_text_window(self):
         if not self.game_text_window:
@@ -87,7 +102,7 @@ class GameMenu:
         self.return_button.place(x=1510, y=25)
         self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
-        self.game_board = Board(self.game_frame, self.game)
+        self.game_board = Board(self.game_frame, self.game, '1')
         self.run_game()
 
     def return_to_menu(self):
@@ -105,7 +120,7 @@ class GameMenu:
 
 
 class Board:
-    def __init__(self, env, game_):
+    def __init__(self, env, game_, mode):
         self.env = env
         self.game = game_
         self.board = None
@@ -116,8 +131,12 @@ class Board:
         self.game_desc_window = Canvas(self.env, width=450, height=350, bg='#FFF9BC')
         self.game_desc_window.place(x=975, y=250)
         self.row = 1
-        self.game_description()
-        self.display()
+        self.mode = mode
+        if self.mode == '1':
+            self.game_description()
+            self.display()
+        else:
+            self.display_two_players_game()
 
     def set_counter(self, event, num):
         self.counter = num + 2
@@ -334,6 +353,37 @@ class Board:
 
     def quit(self):
         self.env.quit()
+
+    def display_two_players_game(self):
+        for piece in self.pieces:
+            piece_image = piece.representation()
+            piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
+            piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
+                    piece.position // 8 - 1) * 100
+            self.board.create_image(piece_x, piece_y, image=piece_image,
+                                    tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
+
+        self.board.bind('<B1-Motion>', self.pick_a_piece)
+
+    def pick_a_piece(self, event):
+        x = event.x
+        y = event.y
+        pieces = self.board.find_withtag('piece')
+        picked_piece = self.board.find_closest(x, y)[0]
+        points = self.board.find_withtag('green_point')
+        if points:
+            for point in points:
+                self.board.delete(point)
+        if picked_piece in pieces:
+            self.board.tag_raise(picked_piece)
+            tags = self.board.itemcget(picked_piece, 'tags')
+            piece_possible_moves = self.pieces[int(tags.split()[1])].possible_moves
+            print(piece_possible_moves)
+            for num in piece_possible_moves:
+                x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
+                y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
+                self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord + 20, fill='green', tag='green_point')
+            self.board.coords(picked_piece, x, y)
 
 
 '''board = Board(Tk())
