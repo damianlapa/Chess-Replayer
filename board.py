@@ -18,13 +18,14 @@ class GameMenu:
         self.env = env
         self.main_canvas = None
         self.bg_image = ImageTk.PhotoImage(Image.open('img/gettyimages-138125883.png'))
-        self.load_exemplary_game = None
+        self.load_exemplary_game_button = None
         self.load_game_button = None
         self.return_button = None
+        self.read_text_button = None
         self.game = None
         self.game_board = None
         self.game_frame = None
-        self.text = None
+        self.game_text_window = None
         self.run_game()
 
     def main_menu(self):
@@ -33,14 +34,36 @@ class GameMenu:
         self.main_canvas = Canvas(self.env, width=800, height=520)
         self.main_canvas.place(x=0, y=0)
         self.main_canvas.create_image(400, 260, image=self.bg_image)
-        self.load_exemplary_game = Button(self.env, text='Load Exemplary', command=self.load_game)
-        self.load_exemplary_game.place(x=100, y=100)
-        self.load_game_button = Button(self.env, text='Paste Game Description')
-        self.load_game_button.place(x=300, y=100)
-        '''self.text = Text(self.main_canvas, width=75, height=75)
-        self.text.place(x=0, y=0)'''
+        self.load_exemplary_game_button = Button(self.env, text='Load Exemplary', command=self.load_exemplary_game)
+        self.load_exemplary_game_button.place(x=50, y=50)
+        self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
+        self.load_game_button.place(x=50, y=100)
 
-    def load_game(self):
+    def display_text_window(self):
+        if not self.main_canvas.find_withtag('game_text_window'):
+            self.game_text_window = Text(self.main_canvas, height=27, width=67)
+        self.game_text_window.place(x=250, y=10)
+        self.read_text_button = Button(self.main_canvas, text='Load Game', command=self.load_pasted_game)
+        self.read_text_button.place(x=465, y=480)
+
+    def test_pasted_game(self, test_game):
+        for i in range(0, len(test_game.game_moves)):
+            if not test_game.move(i):
+                return False
+        return True
+
+    def load_pasted_game(self):
+        pasted_text = self.game_text_window.get('1.0', 'end-1c')
+        self.game = NewGame(pasted_text)
+        test = self.test_pasted_game(self.game)
+        if test:
+            self.load_game()
+        else:
+            text = self.main_canvas.create_text(333, 333, text='Wrong game format!')
+            rect = self.main_canvas.create_rectangle(10, 10, 333, 333, fill='green')
+
+    def load_exemplary_game(self):
+        print(1)
         test_game = '''
         1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
         7. Bh4 b6 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 11. Rc1 Be6
@@ -51,10 +74,12 @@ class GameMenu:
         32. Qe5 Qe8 33. a4 Qd8 34. R1f2 Qe8 35. R2f3 Qd8 36. Bd3 Qe8
         37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
         '''
-        # game_game = self.text.get('1.0', 'end-1c')
         self.game = NewGame(test_game)
+        self.load_game()
+
+    def load_game(self):
         self.main_canvas.place_forget()
-        self.load_exemplary_game.place_forget()
+        self.load_exemplary_game_button.place_forget()
         self.load_game_button.place_forget()
         self.env.geometry('1550x1000')
         self.env.configure(bg='black')
@@ -63,14 +88,16 @@ class GameMenu:
         self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
         self.game_board = Board(self.game_frame, self.game)
+        self.run_game()
 
     def return_to_menu(self):
+        self.game = None
         self.game_frame.place_forget()
         self.return_button.place_forget()
         self.env.geometry('800x520')
         self.main_canvas.place(x=0, y=0)
-        self.load_exemplary_game.place(x=100, y=100)
-        self.load_game_button.place(x=300, y=100)
+        self.load_exemplary_game_button.place(x=50, y=50)
+        self.load_game_button.place(x=50, y=100)
 
     def run_game(self):
         self.main_menu()
