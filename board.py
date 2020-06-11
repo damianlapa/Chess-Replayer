@@ -40,9 +40,9 @@ class GameMenu:
         self.load_game_button.place(x=50, y=100)
 
     def display_text_window(self):
-        if not self.main_canvas.find_withtag('game_text_window'):
+        if not self.game_text_window:
             self.game_text_window = Text(self.main_canvas, height=27, width=67)
-        self.game_text_window.place(x=250, y=10)
+            self.game_text_window.place(x=250, y=10)
         self.read_text_button = Button(self.main_canvas, text='Load Game', command=self.load_pasted_game)
         self.read_text_button.place(x=465, y=480)
 
@@ -57,13 +57,13 @@ class GameMenu:
         self.game = NewGame(pasted_text)
         test = self.test_pasted_game(self.game)
         if test:
+            self.game = NewGame(pasted_text)
             self.load_game()
         else:
-            text = self.main_canvas.create_text(333, 333, text='Wrong game format!')
-            rect = self.main_canvas.create_rectangle(10, 10, 333, 333, fill='green')
+            self.game_text_window.delete('1.0', END)
+            self.game_text_window.insert(INSERT, 'Wrong format!')
 
     def load_exemplary_game(self):
-        print(1)
         test_game = '''
         1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
         7. Bh4 b6 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 11. Rc1 Be6
