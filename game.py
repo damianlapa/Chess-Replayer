@@ -57,24 +57,33 @@ class ChessPiece:
         if self.piece_type == 'pawn':
             if self.color == 'white':
                 if self.position in range(9, 17):
-                    self.possible_moves.append(self.position + 9)
-                    self.possible_moves.append(self.position + 7)
+                    if self.position % 8 != 1:
+                        self.possible_moves.append(self.position + 7)
+                    if self.position % 8 != 0:
+                        self.possible_moves.append(self.position + 9)
                     for j in range(1, 3):
                         self.possible_moves.append(self.position + 8 * j)
                 else:
                     self.possible_moves.append(self.position + 8)
-                    self.possible_moves.append(self.position + 7)
-                    self.possible_moves.append(self.position + 9)
+                    if self.position % 8 != 1:
+                        self.possible_moves.append(self.position + 7)
+                    if self.position % 8 != 0:
+                        self.possible_moves.append(self.position + 9)
+
             else:
                 if self.position in range(49, 57):
-                    self.possible_moves.append(self.position - 9)
-                    self.possible_moves.append(self.position - 7)
+                    if self.position % 8 != 1:
+                        self.possible_moves.append(self.position - 9)
+                    if self.position % 8 != 0:
+                        self.possible_moves.append(self.position - 7)
                     for j in range(1, 3):
                         self.possible_moves.append(self.position - 8 * j)
                 else:
                     self.possible_moves.append(self.position - 8)
-                    self.possible_moves.append(self.position - 7)
-                    self.possible_moves.append(self.position - 9)
+                    if self.position % 8 != 1:
+                        self.possible_moves.append(self.position - 9)
+                    if self.position % 8 != 0:
+                        self.possible_moves.append(self.position - 7)
 
             return self.possible_moves
         # pawn capture
