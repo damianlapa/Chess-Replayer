@@ -777,57 +777,82 @@ class ChessBoard:
                         south_block = True
                     else:
                         south_block = True
+            return piece.possible_moves
 
+        if piece.piece_type == 'knight':
+            fields_to_remove = []
+            for move in piece.possible_moves:
+                if self.find_piece_by_position(move):
+                    if self.find_piece_by_position(move).color == piece.color:
+                        fields_to_remove.append(move)
+            for field in fields_to_remove:
+                piece.possible_moves.remove(field)
+            return piece.possible_moves
 
-                '''if east_block:
+        if piece.piece_type == 'bishop':
+            north_east_block = False
+            south_east_block = False
+            south_west_block = False
+            north_west_block = False
+            for j in range(1, 8):
+                field_1 = field + (9 * j) if (field + (9 * j)) % 8 != 1 else 0
+                field_2 = field - (7 * j) if (field - (7 * j)) % 8 != 1 else 0
+                field_3 = field - (9 * j) if (field - (9 * j)) % 8 != 0 else 0
+                field_4 = field + (7 * j) if (field + (7 * j)) % 8 != 0 else 0
+
+                field_1_occupancy = self.find_piece_by_position(field_1)
+                field_2_occupancy = self.find_piece_by_position(field_2)
+                field_3_occupancy = self.find_piece_by_position(field_3)
+                field_4_occupancy = self.find_piece_by_position(field_4)
+
+                if north_east_block:
                     if field_1 in piece.possible_moves:
                         piece.possible_moves.remove(field_1)
-                    if field_1 % 8 == 0:
-                        east_block = False
-                if west_block:
+                if south_east_block:
                     if field_2 in piece.possible_moves:
                         piece.possible_moves.remove(field_2)
-                    if field_2 % 8 == 1:
-                        west_block = False
-                if north_block:
+                if south_west_block:
                     if field_3 in piece.possible_moves:
                         piece.possible_moves.remove(field_3)
-                    if field_3 in range(57, 65):
-                        north_block = False
-                if south_block:
+                if north_west_block:
                     if field_4 in piece.possible_moves:
                         piece.possible_moves.remove(field_4)
-                        if field_4 in range(1, 9):
-                            south_block = False
+
                 if field_1_occupancy:
                     if field_1_occupancy.color == piece.color:
                         if field_1 in piece.possible_moves:
                             piece.possible_moves.remove(field_1)
-                        east_block = True
+                        north_east_block = True
                     else:
-                        east_block = True
+                        north_east_block = True
                 if field_2_occupancy:
                     if field_2_occupancy.color == piece.color:
                         if field_2 in piece.possible_moves:
                             piece.possible_moves.remove(field_2)
-                        west_block = True
+                        south_east_block = True
                     else:
-                        west_block = True
+                        south_east_block = True
                 if field_3_occupancy:
                     if field_3_occupancy.color == piece.color:
                         if field_3 in piece.possible_moves:
                             piece.possible_moves.remove(field_3)
-                        north_block = True
+                        south_west_block = True
                     else:
-                        north_block = True
+                        south_west_block = True
                 if field_4_occupancy:
                     if field_4_occupancy.color == piece.color:
                         if field_4 in piece.possible_moves:
                             piece.possible_moves.remove(field_4)
-                        south_block = True
+                        north_west_block = True
                     else:
-                        south_block = True'''
+                        north_west_block = True
+            return piece.possible_moves
 
+        if piece.piece_type == 'queen':
+            piece_rook_moves = self.piece_current_moves(ChessPiece('rook', piece.position, piece.color))
+            piece_bishop_moves = self.piece_current_moves(ChessPiece('bishop', piece.position, piece.color))
+            piece.possible_moves = piece_rook_moves + piece_bishop_moves
+            return piece.possible_moves
 
 
 class TwoPlayersGame:
@@ -836,7 +861,6 @@ class TwoPlayersGame:
         self.board = ChessBoard()
         self.pieces = self.board.chess_pieces
         self.set_all_pieces()
-
 
     def set_all_pieces(self):
         for i in range(0, 8):
@@ -859,14 +883,16 @@ class TwoPlayersGame:
             black_piece = ChessPiece('bishop', 59 + i * 3, 'black')
             self.pieces.append(piece)
             self.pieces.append(black_piece)
-        white_queen = ChessPiece('king', 5)
-        white_king = ChessPiece('queen', 4)
-        black_queen = ChessPiece('king', 61, 'black')
-        black_king = ChessPiece('queen', 60, 'black')
+        white_king = ChessPiece('king', 5)
+        white_queen = ChessPiece('queen', 4)
+        black_king = ChessPiece('king', 61, 'black')
+        black_queen = ChessPiece('queen', 60, 'black')
         self.pieces.append(white_queen)
         self.pieces.append(white_king)
         self.pieces.append(black_king)
         self.pieces.append(black_queen)
+        test_piece = ChessPiece('queen', 37)
+        self.pieces.append(test_piece)
 
         for piece in self.pieces:
             index = self.pieces.index(piece)
@@ -885,8 +911,6 @@ class TwoPlayersGame:
             self.white_move()
         else:
             self.black_move()
-
-
 
 
 test_game = '''
