@@ -690,10 +690,153 @@ class NewGame:
                 pass
 
 
+class ChessBoard:
+    def __init__(self):
+        self.chess_pieces = []
+
+    def __str__(self):
+        for piece in self.chess_pieces:
+            print(piece)
+
+    def add_piece(self, piece):
+        self.chess_pieces.append(piece)
+
+    def find_piece_by_position(self, field_num):
+        for piece in self.chess_pieces:
+            if piece.position == field_num:
+                return piece
+        return False
+
+    def chess_piece_move(self, piece, new_position):
+        piece_index = self.chess_pieces.index(piece)
+        self.chess_pieces.remove(piece)
+        piece.new_position(new_position)
+        self.chess_pieces.insert(piece, piece_index)
+
+    def chess_piece_capture(self, piece, new_position):
+        self.chess_pieces.remove(self.find_piece_by_position(new_position))
+        self.chess_piece_move(piece, new_position)
+
+    def piece_current_moves(self, piece):
+        field = piece.position
+        if piece.piece_type == 'rook':
+            north_block = False
+            south_block = False
+            east_block = False
+            west_block = False
+
+            for i in range(1, 8):
+                field_1 = field + i if (field + i) % 8 != 1 else 0
+                field_2 = field - i if (field - 1) % 8 != 0 else 0
+                field_3 = field + (8 * i)
+                field_4 = field - (8 * i)
+
+                field_1_occupancy = self.find_piece_by_position(field_1)
+                field_2_occupancy = self.find_piece_by_position(field_2)
+                field_3_occupancy = self.find_piece_by_position(field_3)
+                field_4_occupancy = self.find_piece_by_position(field_4)
+
+                if east_block:
+                    if field_1 in piece.possible_moves:
+                        piece.possible_moves.remove(field_1)
+                if west_block:
+                    if field_2 in piece.possible_moves:
+                        piece.possible_moves.remove(field_2)
+                if north_block:
+                    if field_3 in piece.possible_moves:
+                        piece.possible_moves.remove(field_3)
+                if south_block:
+                    if field_4 in piece.possible_moves:
+                        piece.possible_moves.remove(field_4)
+
+                if field_1_occupancy:
+                    if field_1_occupancy.color == piece.color:
+                        if field_1 in piece.possible_moves:
+                            piece.possible_moves.remove(field_1)
+                        east_block = True
+                    else:
+                        east_block = True
+                if field_2_occupancy:
+                    if field_2_occupancy.color == piece.color:
+                        if field_2 in piece.possible_moves:
+                            piece.possible_moves.remove(field_2)
+                        west_block = True
+                    else:
+                        west_block = True
+                if field_3_occupancy:
+                    if field_3_occupancy.color == piece.color:
+                        if field_3 in piece.possible_moves:
+                            piece.possible_moves.remove(field_3)
+                        north_block = True
+                    else:
+                        north_block = True
+                if field_4_occupancy:
+                    if field_4_occupancy.color == piece.color:
+                        if field_4 in piece.possible_moves:
+                            piece.possible_moves.remove(field_4)
+                        south_block = True
+                    else:
+                        south_block = True
+
+
+                '''if east_block:
+                    if field_1 in piece.possible_moves:
+                        piece.possible_moves.remove(field_1)
+                    if field_1 % 8 == 0:
+                        east_block = False
+                if west_block:
+                    if field_2 in piece.possible_moves:
+                        piece.possible_moves.remove(field_2)
+                    if field_2 % 8 == 1:
+                        west_block = False
+                if north_block:
+                    if field_3 in piece.possible_moves:
+                        piece.possible_moves.remove(field_3)
+                    if field_3 in range(57, 65):
+                        north_block = False
+                if south_block:
+                    if field_4 in piece.possible_moves:
+                        piece.possible_moves.remove(field_4)
+                        if field_4 in range(1, 9):
+                            south_block = False
+                if field_1_occupancy:
+                    if field_1_occupancy.color == piece.color:
+                        if field_1 in piece.possible_moves:
+                            piece.possible_moves.remove(field_1)
+                        east_block = True
+                    else:
+                        east_block = True
+                if field_2_occupancy:
+                    if field_2_occupancy.color == piece.color:
+                        if field_2 in piece.possible_moves:
+                            piece.possible_moves.remove(field_2)
+                        west_block = True
+                    else:
+                        west_block = True
+                if field_3_occupancy:
+                    if field_3_occupancy.color == piece.color:
+                        if field_3 in piece.possible_moves:
+                            piece.possible_moves.remove(field_3)
+                        north_block = True
+                    else:
+                        north_block = True
+                if field_4_occupancy:
+                    if field_4_occupancy.color == piece.color:
+                        if field_4 in piece.possible_moves:
+                            piece.possible_moves.remove(field_4)
+                        south_block = True
+                    else:
+                        south_block = True'''
+
+
+
 class TwoPlayersGame:
     def __init__(self):
-        self.pieces = []
+        self.turn = 0
+        self.board = ChessBoard()
+        self.pieces = self.board.chess_pieces
         self.set_all_pieces()
+
 
     def set_all_pieces(self):
         for i in range(0, 8):
@@ -724,6 +867,26 @@ class TwoPlayersGame:
         self.pieces.append(white_king)
         self.pieces.append(black_king)
         self.pieces.append(black_queen)
+
+        for piece in self.pieces:
+            index = self.pieces.index(piece)
+            self.pieces.remove(piece)
+            self.board.piece_current_moves(piece)
+            self.pieces.insert(index, piece)
+
+    def white_move(self, piece, new_position):
+        piece.new_position(new_position)
+
+    def black_move(self):
+        pass
+
+    def game(self):
+        if self.turn % 2 == 0:
+            self.white_move()
+        else:
+            self.black_move()
+
+
 
 
 test_game = '''

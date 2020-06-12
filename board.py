@@ -382,8 +382,10 @@ class Board:
             for num in piece_possible_moves:
                 x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
                 y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
-                self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord + 20, fill='green', tag='green_point')
+                self.board.create_oval(x_coord, y_coord, x_coord +20, y_coord + 20, fill='green', tag='green_point')
             self.board.coords(picked_piece, x, y)
+
+
 
 
 '''board = Board(Tk())
