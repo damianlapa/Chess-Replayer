@@ -52,7 +52,7 @@ class GameMenu:
         self.return_button.place(x=1510, y=25)
         self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
-        self.game = Board(self.env, TwoPlayersGame(), '2')
+        self.game = Board(self.game_frame, TwoPlayersGame(), '2')
 
     def display_text_window(self):
         if not self.game_text_window:
@@ -368,21 +368,30 @@ class Board:
     def pick_a_piece(self, event):
         x = event.x
         y = event.y
+        print(x, y)
         pieces = self.board.find_withtag('piece')
         picked_piece = self.board.find_closest(x, y)[0]
         points = self.board.find_withtag('green_point')
+        red_points = self.board.find_withtag('red_point')
         if points:
             for point in points:
+                self.board.delete(point)
+        if red_points:
+            for point in red_points:
                 self.board.delete(point)
         if picked_piece in pieces:
             self.board.tag_raise(picked_piece)
             tags = self.board.itemcget(picked_piece, 'tags')
             piece_possible_moves = self.pieces[int(tags.split()[1])].possible_moves
-            print(piece_possible_moves)
+            piece_protected_moves = self.pieces[int(tags.split()[1])].protected_moves
             for num in piece_possible_moves:
                 x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
                 y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
                 self.board.create_oval(x_coord, y_coord, x_coord +20, y_coord + 20, fill='green', tag='green_point')
+            for num in piece_protected_moves:
+                x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
+                y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
+                self.board.create_oval(x_coord, y_coord, x_coord +20, y_coord + 20, fill='red', tag='red_point')
             self.board.coords(picked_piece, x, y)
 
 
