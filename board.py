@@ -220,6 +220,10 @@ class Board:
             text += str(position_number // 8)
         return text
 
+    def change_field_description_to_number(self, field_description):
+        number = (alphabet2.index(field_description[0]) + 1) + (int(field_description[1]) - 1) * 8
+        return number
+
     def move_piece(self, piece_to_move, new_position, piece_index):
         field = self.board.find_withtag('field')
         old_field = self.board.find_withtag('old_field')
@@ -363,12 +367,13 @@ class Board:
             self.board.create_image(piece_x, piece_y, image=piece_image,
                                     tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
-        self.board.bind('<B1-Motion>', self.pick_a_piece)
+        self.board.bind('<1>', self.pick_a_piece)
+        self.board.bind('<B1-Motion>', self.piece_move_game)
+        self.board.bind('<ButtonRelease-1>', self.piece_new_place)
 
     def pick_a_piece(self, event):
         x = event.x
         y = event.y
-        print(x, y)
         pieces = self.board.find_withtag('piece')
         picked_piece = self.board.find_closest(x, y)[0]
         points = self.board.find_withtag('green_point')
@@ -387,14 +392,33 @@ class Board:
             for num in piece_possible_moves:
                 x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
                 y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
-                self.board.create_oval(x_coord, y_coord, x_coord +20, y_coord + 20, fill='green', tag='green_point')
+                self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord + 20, fill='green', tag='green_point')
             for num in piece_protected_moves:
                 x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
                 y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
-                self.board.create_oval(x_coord, y_coord, x_coord +20, y_coord + 20, fill='red', tag='red_point')
-            self.board.coords(picked_piece, x, y)
+                self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord + 20, fill='red', tag='red_point')
+            return picked_piece
 
+    def piece_move_game(self, event):
+        piece = self.pick_a_piece(event)
+        self.board.tag_raise(piece)
+        self.board.coords(piece, event.x, event.y)
+        field_nr = 0
+        field_x = event.x // 100
+        field_y = (800 - event.y) // 100
+        field_nr = field_x + 1 + (field_y * 8)
+        return field_nr
 
+    def piece_new_place(self, event):
+        moved_piece = self.pick_a_piece(event)
+        print(moved_piece)
+        piece_tags = self.board.itemcget(moved_piece, 'tags')
+        old_field = self.change_field_description_to_number(piece_tags.split()[0])
+        new_field = self.piece_move_game(event)
+        x_coord = ((new_field % 8) - 1) * 100 + 50 if new_field % 8 != 0 else 750
+        y_coord = 750 - (new_field // 8) * 100 if new_field % 8 != 0 else 750 - ((new_field // 8) - 1) * 100
+        self.board.coords(moved_piece, x_coord, y_coord)
+        self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), new_field)
 
 
 '''board = Board(Tk())
