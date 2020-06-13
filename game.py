@@ -849,8 +849,6 @@ class ChessBoard:
                 for piece_ in self.chess_pieces:
                     if piece.color != piece_.color:
                         if move in piece_.possible_moves or move in piece_.protected_moves:
-                            if move in piece_.possible_moves:
-                                print(move, piece_, piece_.position)
                             moves_to_remove.append(move)
             for move in moves_to_remove:
                 if move in piece.possible_moves:
@@ -863,6 +861,7 @@ class ChessBoard:
 
 
         if piece.piece_type == 'pawn':
+            piece.protected_moves = []
             if piece.color == 'white':
                 if self.find_piece_by_position(piece.position + 9) and piece.position % 8 != 0:
                     if self.find_piece_by_position(piece.position + 9).color == piece.color:

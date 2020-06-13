@@ -401,24 +401,35 @@ class Board:
 
     def piece_move_game(self, event):
         piece = self.pick_a_piece(event)
-        self.board.tag_raise(piece)
-        self.board.coords(piece, event.x, event.y)
-        field_nr = 0
-        field_x = event.x // 100
-        field_y = (800 - event.y) // 100
-        field_nr = field_x + 1 + (field_y * 8)
-        return field_nr
+        if piece:
+            self.board.tag_raise(piece)
+            self.board.coords(piece, event.x, event.y)
+            field_nr = 0
+            field_x = event.x // 100
+            field_y = (800 - event.y) // 100
+            field_nr = field_x + 1 + (field_y * 8)
+            return field_nr
 
     def piece_new_place(self, event):
         moved_piece = self.pick_a_piece(event)
-        print(moved_piece)
-        piece_tags = self.board.itemcget(moved_piece, 'tags')
-        old_field = self.change_field_description_to_number(piece_tags.split()[0])
-        new_field = self.piece_move_game(event)
-        x_coord = ((new_field % 8) - 1) * 100 + 50 if new_field % 8 != 0 else 750
-        y_coord = 750 - (new_field // 8) * 100 if new_field % 8 != 0 else 750 - ((new_field // 8) - 1) * 100
-        self.board.coords(moved_piece, x_coord, y_coord)
-        self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), new_field)
+        if moved_piece:
+            piece_tags = self.board.itemcget(moved_piece, 'tags')
+            old_tags = piece_tags.split()
+            old_field = self.change_field_description_to_number(old_tags[0])
+            new_field = self.piece_move_game(event)
+            if new_field:
+                x_coord = ((new_field % 8) - 1) * 100 + 50 if new_field % 8 != 0 else 750
+                y_coord = 750 - (new_field // 8) * 100 if new_field % 8 != 0 else 750 - ((new_field // 8) - 1) * 100
+                self.board.coords(moved_piece, x_coord, y_coord)
+                new_field_description = self.decode_position_number(new_field)
+                new_tags = new_field_description
+                for i in range(1, len(old_tags)):
+                    new_tags += ' ' + old_tags[i]
+                print(new_tags)
+                self.board.itemconfig(moved_piece, tags=new_tags)
+                self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), new_field)
+                for piece in self.pieces:
+                    self.game.board.piece_current_moves(piece)
 
 
 '''board = Board(Tk())
