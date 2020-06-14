@@ -692,18 +692,29 @@ class ChessBoard:
         self.chess_piece_move(piece, new_position)
 
     def piece_current_moves(self, piece):
-        field = piece.position
+
+        piece.finding_possible_moves()
+
         if piece.piece_type == 'rook':
+            piece.protected_moves = []
+            field = piece.position
             north_block = False
             south_block = False
             east_block = False
             west_block = False
 
             for i in range(1, 8):
-                field_1 = field + i if (field + i) % 8 != 1 else 0
-                field_2 = field - i if (field - 1) % 8 != 0 else 0
+                field_1 = field + i if field % 8 != 0 else 0
+                if (field + i) % 8 == 1:
+                    field_1 = 0
+                field_2 = field - i if field % 8 != 1 else 0
+                if (field - i) % 8 == 0:
+                    field_2 = 0
                 field_3 = field + (8 * i)
                 field_4 = field - (8 * i)
+
+                if field_2 == 24:
+                    print('error')
 
                 field_1_occupancy = self.find_piece_by_position(field_1)
                 field_2_occupancy = self.find_piece_by_position(field_2)
@@ -725,33 +736,41 @@ class ChessBoard:
 
                 if field_1_occupancy:
                     if field_1_occupancy.color == piece.color:
+
                         if field_1 in piece.possible_moves:
-                            piece.protected_moves.append(field_1)
                             piece.possible_moves.remove(field_1)
+                        if not east_block:
+                            piece.protected_moves.append(field_1)
                         east_block = True
                     else:
                         east_block = True
                 if field_2_occupancy:
                     if field_2_occupancy.color == piece.color:
+
                         if field_2 in piece.possible_moves:
-                            piece.protected_moves.append(field_2)
                             piece.possible_moves.remove(field_2)
+                        if not west_block:
+                            piece.protected_moves.append(field_2)
                         west_block = True
                     else:
                         west_block = True
                 if field_3_occupancy:
                     if field_3_occupancy.color == piece.color:
+
                         if field_3 in piece.possible_moves:
-                            piece.protected_moves.append(field_3)
                             piece.possible_moves.remove(field_3)
+                        if not north_block:
+                            piece.protected_moves.append(field_3)
                         north_block = True
                     else:
                         north_block = True
                 if field_4_occupancy:
                     if field_4_occupancy.color == piece.color:
+
                         if field_4 in piece.possible_moves:
-                            piece.protected_moves.append(field_4)
                             piece.possible_moves.remove(field_4)
+                        if not south_block:
+                            piece.protected_moves.append(field_4)
                         south_block = True
                     else:
                         south_block = True
@@ -759,6 +778,7 @@ class ChessBoard:
 
         if piece.piece_type == 'knight':
             fields_to_remove = []
+            piece.protected_moves = []
             for move in piece.possible_moves:
                 if self.find_piece_by_position(move):
                     if self.find_piece_by_position(move).color == piece.color:
@@ -769,6 +789,8 @@ class ChessBoard:
             return piece.possible_moves
 
         if piece.piece_type == 'bishop':
+            field = piece.position
+            piece.protected_moves = []
             north_east_block = False
             south_east_block = False
             south_west_block = False
@@ -832,6 +854,7 @@ class ChessBoard:
             return piece.possible_moves
 
         if piece.piece_type == 'queen':
+            piece.protected_moves = []
             bishop = ChessPiece('bishop', piece.position, piece.color)
             rook = ChessPiece('rook', piece.position, piece.color)
             self.piece_current_moves(bishop)
@@ -841,24 +864,21 @@ class ChessBoard:
             return piece.possible_moves
 
         if piece.piece_type == 'king':
+            piece.protected_moves = []
             moves_to_remove = []
             for move in piece.possible_moves:
                 if self.find_piece_by_position(move):
                     if self.find_piece_by_position(move).color == piece.color:
                         piece.protected_moves.append(move)
+                        moves_to_remove.append(move)
                 for piece_ in self.chess_pieces:
-                    if piece.color != piece_.color:
+                    if piece.color != piece_.color and piece_.piece_type != 'king':
+                        self.piece_current_moves(piece_)
                         if move in piece_.possible_moves or move in piece_.protected_moves:
                             moves_to_remove.append(move)
             for move in moves_to_remove:
                 if move in piece.possible_moves:
                     piece.possible_moves.remove(move)
-                if move in piece.protected_moves:
-                    piece.protected_moves.remove(move)
-
-
-
-
 
         if piece.piece_type == 'pawn':
             piece.protected_moves = []
@@ -908,8 +928,6 @@ class ChessBoard:
                         piece.possible_moves.remove(piece.position - 16)
                     except ValueError:
                         pass
-
-
 
 
 class TwoPlayersGame:
