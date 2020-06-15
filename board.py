@@ -449,6 +449,7 @@ class Board:
             new_field = self.piece_move_game(event)
             # checking check threat ends
             check_end = True
+            king_safety = True
             if self.check:
                 check_end = False
                 test_board = ChessBoard()
@@ -459,18 +460,31 @@ class Board:
                     test_board.chess_piece_capture(piece, new_field)
                 else:
                     test_board.chess_piece_move(piece, new_field)
-                print(test_board.test_position())
                 if not test_board.test_position()[1] and self.tour % 2 == 1:
                     check_end = True
                     self.check = None
                 elif not test_board.test_position()[0] and self.tour % 2 == 0:
                     check_end = True
                     self.check = None
-            if new_field and check_end:
-                print('new_field', new_field)
+            # checking if move do not undercover the king
+            if king_safety:
+                if not old_field == new_field:
+                    test_king_safety = ChessBoard()
+                    test_king_safety.chess_pieces = self.game.board.copy_board()
+                    piece = test_king_safety.find_piece_by_position(old_field)
+                    field_occupancy = test_king_safety.find_piece_by_position(new_field)
+                    if field_occupancy:
+                        test_king_safety.chess_piece_capture(piece, new_field)
+                    else:
+                        test_king_safety.chess_piece_move(piece, new_field)
+                    if test_king_safety.test_position()[0] and self.tour % 2 == 0:
+                        king_safety = False
+                    elif test_king_safety.test_position()[1] and self.tour % 2 == 1:
+                        king_safety = False
+                    test_king_safety = None
+            if new_field and check_end and king_safety:
                 new_field_occupancy = self.game.board.find_piece_by_position(new_field)
                 old_field_piece = self.game.board.find_piece_by_position(old_field)
-                print('old_field', old_field, old_field_piece)
                 if new_field in old_field_piece.possible_moves:
                     new_coords = self.create_coords(new_field)
                     self.board.coords(moved_piece, new_coords[0], new_coords[1])
@@ -482,7 +496,6 @@ class Board:
                                                                 new_field)
                             self.tour += 1
                         else:
-                            print('same color')
                             old_field_coords = self.create_coords(old_field)
                             self.board.coords(moved_piece, old_field_coords[0], old_field_coords[1])
                             error = True
@@ -518,7 +531,6 @@ class Board:
                     if self.game.king_check('black'):
                         self.check = True
 
-                print(self.check)
             else:
                 old_coords = self.create_coords(old_field)
                 self.board.coords(moved_piece, old_coords[0], old_coords[1])
