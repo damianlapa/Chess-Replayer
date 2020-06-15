@@ -880,6 +880,8 @@ class ChessBoard:
                 if move in piece.possible_moves:
                     piece.possible_moves.remove(move)
 
+            return piece.possible_moves
+
         if piece.piece_type == 'pawn':
             piece.protected_moves = []
             if piece.color == 'white':
@@ -929,10 +931,42 @@ class ChessBoard:
                     except ValueError:
                         pass
 
+            return piece.possible_moves
+
+    def test_position(self):
+        for piece in self.chess_pieces:
+            self.piece_current_moves(piece)
+        return self.king_check('white'), self.king_check('black')
+
+    def king_check(self, side):
+        king = None
+        for piece in self.chess_pieces:
+            if piece.piece_type == 'king':
+                if piece.color == side:
+                    king = piece
+        if king:
+            king_position = king.position
+            for piece in self.chess_pieces:
+                if piece.color != king.color:
+                    if king_position in self.piece_current_moves(piece):
+                        return True
+        else:
+            return False
+
+    def copy_board(self):
+        new_pieces = []
+        for piece in self.chess_pieces:
+            new_piece_type = piece.piece_type
+            new_piece_color = piece.color
+            new_piece_position = piece.position
+            new_piece = ChessPiece(new_piece_type, new_piece_position, new_piece_color)
+            new_pieces.append(new_piece)
+        return new_pieces
+
 
 class TwoPlayersGame:
     def __init__(self):
-        self.turn = 0
+        self.move_counter = 0
         self.board = ChessBoard()
         self.pieces = self.board.chess_pieces
         self.set_all_pieces()
@@ -962,14 +996,11 @@ class TwoPlayersGame:
         white_queen = ChessPiece('queen', 4)
 
         black_queen = ChessPiece('queen', 60, 'black')
-        test_piece = ChessPiece('queen', 22, 'black')
-        king_test = ChessPiece('king', 24)
         white_king = ChessPiece('king', 5)
         black_king = ChessPiece('king', 61, 'black')
-        self.pieces.append(test_piece)
+
         self.pieces.append(white_queen)
         self.pieces.append(black_queen)
-        self.pieces.append(king_test)
         self.pieces.append(white_king)
         self.pieces.append(black_king)
 
@@ -979,14 +1010,29 @@ class TwoPlayersGame:
             self.board.piece_current_moves(piece)
             self.pieces.insert(index, piece)
 
-    def white_move(self, piece, new_position):
-        piece.new_position(new_position)
+    def king_check(self, side):
+        king = None
+        for piece in self.pieces:
+            if piece.piece_type == 'king':
+                if piece.color == side:
+                    king = piece
+        if king:
+            king_position = king.position
+            for piece in self.pieces:
+                if piece.color != king.color:
+                    if king_position in self.board.piece_current_moves(piece):
+                        return True
+        else:
+            return False
+
+    def white_move(self,):
+        pass
 
     def black_move(self):
         pass
 
     def game(self):
-        if self.turn % 2 == 0:
+        if self.move_counter % 2 == 0:
             self.white_move()
         else:
             self.black_move()
