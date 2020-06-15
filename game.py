@@ -667,6 +667,10 @@ class NewGame:
 class ChessBoard:
     def __init__(self):
         self.chess_pieces = []
+        self.black_long_castle_possibility = True
+        self.black_short_castle_possibility = True
+        self.white_short_castle_possibility = True
+        self.white_long_castle_possibility = True
 
     def __str__(self):
         for piece in self.chess_pieces:
@@ -682,6 +686,22 @@ class ChessBoard:
         return False
 
     def chess_piece_move(self, piece, new_position):
+        if piece.piece_type == 'king':
+            if piece.color == 'white':
+                self.white_long_castle_possibility = False
+                self.white_short_castle_possibility = False
+            else:
+                self.black_short_castle_possibility = False
+                self.white_long_castle_possibility = False
+        elif piece.piece_type == 'rook':
+            if piece.position == 1:
+                self.white_long_castle_possibility = False
+            elif piece.position == 8:
+                self.white_short_castle_possibility = False
+            elif piece.position == 57:
+                self.black_long_castle_possibility = False
+            elif piece.position == 64:
+                self.black_short_castle_possibility = False
         piece_index = self.chess_pieces.index(piece)
         self.chess_pieces.remove(piece)
         piece.new_position(new_position)
@@ -963,6 +983,72 @@ class ChessBoard:
             new_pieces.append(new_piece)
         return new_pieces
 
+    def king_castle_possibility(self, king):
+
+        def check_castle_block(field_1, field_2):
+            for piece in self.chess_pieces:
+                if piece.color != king.color:
+                    self.piece_current_moves(piece)
+                    if field_1 in piece.possible_moves or field_2 in piece.possible_moves:
+                        return True
+            return False
+
+        def check_fields_emptiness(fields):
+            for piece in self.chess_pieces:
+                if piece.position in fields:
+                    return False
+            return True
+
+        if king.color == 'black':
+            if self.black_short_castle_possibility:
+                if check_fields_emptiness((62, 63)):
+                    if not check_castle_block(62, 63):
+                        king_index = self.chess_pieces.index(king)
+                        self.chess_pieces.remove(king)
+                        king.possible_moves.append(63)
+                        rook = self.find_piece_by_position(64)
+                        rook.possible_moves.append(62)
+                        self.chess_pieces.insert(king_index, king)
+                        # self.castle(king, rook, 'short')
+            if self.black_long_castle_possibility:
+                if check_fields_emptiness((58, 59, 60)):
+                    if not check_castle_block(59, 60):
+                        king_index = self.chess_pieces.index(king)
+                        self.chess_pieces.remove(king)
+                        king.possible_moves.append(59)
+                        rook = self.find_piece_by_position(57)
+                        rook.possible_moves.append(60)
+                        self.chess_pieces.insert(king_index, king)
+                        # self.castle(king, rook, 'short')
+        else:
+            if self.white_short_castle_possibility:
+                if check_fields_emptiness((6, 7)):
+                    if not check_castle_block(6, 7):
+                        king_index = self.chess_pieces.index(king)
+                        self.chess_pieces.remove(king)
+                        king.possible_moves.append(7)
+                        rook = self.find_piece_by_position(8)
+                        rook.possible_moves.append(6)
+                        self.chess_pieces.insert(king_index, king)
+                        # self.castle(king, rook, 'short')
+            if self.white_long_castle_possibility:
+                if check_fields_emptiness((2, 3, 4)):
+                    if not check_castle_block(3, 4):
+                        king_index = self.chess_pieces.index(king)
+                        self.chess_pieces.remove(king)
+                        king.possible_moves.append(3)
+                        rook = self.find_piece_by_position(1)
+                        rook.possible_moves.append(4)
+                        self.chess_pieces.insert(king_index, king)
+
+    def castle(self, king, rook, mode):
+        if king.color == 'black':
+            if mode == 'short':
+                self.chess_piece_move(king, 63)
+                self.chess_piece_move(rook, 62)
+            else:
+                self.chess_piece_move(king, 59)
+                self.chess_piece_move(rook, 60)
 
 class TwoPlayersGame:
     def __init__(self):
@@ -972,11 +1058,11 @@ class TwoPlayersGame:
         self.set_all_pieces()
 
     def set_all_pieces(self):
-        for i in range(0, 8):
+        '''for i in range(0, 8):
             pawn = ChessPiece('pawn', 9 + i)
             self.pieces.append(pawn)
             black_pawn = ChessPiece('pawn', 49 + i, 'black')
-            self.pieces.append(black_pawn)
+            self.pieces.append(black_pawn)'''
         for i in range(0, 2):
             piece = ChessPiece('rook', 1 + i * 7)
             black_piece = ChessPiece('rook', 57 + i * 7, 'black')
@@ -987,6 +1073,7 @@ class TwoPlayersGame:
             black_piece = ChessPiece('knight', 58 + i * 5, 'black')
             self.pieces.append(piece)
             self.pieces.append(black_piece)
+            '''
         for i in range(0, 2):
             piece = ChessPiece('bishop', 3 + i * 3)
             black_piece = ChessPiece('bishop', 59 + i * 3, 'black')
@@ -995,12 +1082,12 @@ class TwoPlayersGame:
 
         white_queen = ChessPiece('queen', 4)
 
-        black_queen = ChessPiece('queen', 60, 'black')
+        black_queen = ChessPiece('queen', 60, 'black')'''
         white_king = ChessPiece('king', 5)
         black_king = ChessPiece('king', 61, 'black')
 
-        self.pieces.append(white_queen)
-        self.pieces.append(black_queen)
+        '''self.pieces.append(white_queen)
+        self.pieces.append(black_queen)'''
         self.pieces.append(white_king)
         self.pieces.append(black_king)
 

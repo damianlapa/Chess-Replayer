@@ -408,8 +408,13 @@ class Board:
                 picked_piece_object = self.game.board.find_piece_by_position(
                     self.change_field_description_to_number(tags.split()[0]))
                 self.game.board.piece_current_moves(picked_piece_object)
+                if picked_piece_object.piece_type == 'king':
+                    print('eto zhe korol')
+                    self.game.board.king_castle_possibility(picked_piece_object)
+                    print('#1', picked_piece_object.possible_moves)
                 self.board.tag_raise(picked_piece)
                 self.moved_piece_tag = tags.split()[0]
+                print('#2', picked_piece_object.possible_moves)
                 field_number = self.change_field_description_to_number(self.moved_piece_tag)
                 piece_possible_moves = self.game.board.find_piece_by_position(field_number).possible_moves
                 piece_protected_moves = self.game.board.find_piece_by_position(field_number).protected_moves
@@ -438,6 +443,16 @@ class Board:
             return field_nr
 
     def piece_new_place(self, event):
+        castle_rook = None
+        rook_new_field = 0
+        def castle(king, rook, king_position, rook_position):
+            king_coords = self.create_coords(king_position)
+            rook_coords = self.create_coords(rook_position)
+            self.game.board.chess_piece_move(king, king_position)
+            self.game.board.chess_piece_move(rook, rook_position)
+            self.board.coords(king, king_coords[0], king_coords[1])
+            self.board.coords(rook, rook_coords[0], rook_coords[1])
+        special_move = False
         error = None
         moved_piece = None
         if self.moved_piece_tag:
@@ -447,98 +462,117 @@ class Board:
             old_tags = piece_tags.split()
             old_field = self.change_field_description_to_number(old_tags[0])
             new_field = self.piece_move_game(event)
-            # checking check threat ends
-            check_end = True
-            king_safety = True
-            if self.check:
-                check_end = False
-                test_board = ChessBoard()
-                test_board.chess_pieces = self.game.board.copy_board()
-                piece = test_board.find_piece_by_position(old_field)
-                field_occupancy = test_board.find_piece_by_position(new_field)
-                if field_occupancy:
-                    test_board.chess_piece_capture(piece, new_field)
-                else:
-                    test_board.chess_piece_move(piece, new_field)
-                if not test_board.test_position()[1] and self.tour % 2 == 1:
-                    check_end = True
-                    self.check = None
-                elif not test_board.test_position()[0] and self.tour % 2 == 0:
-                    check_end = True
-                    self.check = None
-            # checking if move do not undercover the king
-            if king_safety:
-                if not old_field == new_field:
-                    test_king_safety = ChessBoard()
-                    test_king_safety.chess_pieces = self.game.board.copy_board()
-                    piece = test_king_safety.find_piece_by_position(old_field)
-                    field_occupancy = test_king_safety.find_piece_by_position(new_field)
-                    if field_occupancy:
-                        test_king_safety.chess_piece_capture(piece, new_field)
-                    else:
-                        test_king_safety.chess_piece_move(piece, new_field)
-                    if test_king_safety.test_position()[0] and self.tour % 2 == 0:
-                        king_safety = False
-                    elif test_king_safety.test_position()[1] and self.tour % 2 == 1:
-                        king_safety = False
-                    test_king_safety = None
-            if new_field and check_end and king_safety:
-                new_field_occupancy = self.game.board.find_piece_by_position(new_field)
-                old_field_piece = self.game.board.find_piece_by_position(old_field)
-                if new_field in old_field_piece.possible_moves:
-                    new_coords = self.create_coords(new_field)
-                    self.board.coords(moved_piece, new_coords[0], new_coords[1])
-                    new_field_description = self.decode_position_number(new_field)
-                    if new_field_occupancy:
-                        if new_field_occupancy.color != old_field_piece.color:
-                            self.board.delete(self.board.find_withtag(new_field_description)[0])
-                            self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field),
-                                                                new_field)
-                            self.tour += 1
-                        else:
-                            old_field_coords = self.create_coords(old_field)
-                            self.board.coords(moved_piece, old_field_coords[0], old_field_coords[1])
-                            error = True
-                    else:
-                        self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), new_field)
-                        self.tour += 1
-                    if not error:
-                        new_tags = new_field_description
-                        for i in range(1, len(old_tags)):
-                            new_tags += ' ' + old_tags[i]
-                        self.board.itemconfig(moved_piece, tags=new_tags)
 
-                    for piece in self.pieces:
-                        self.game.board.piece_current_moves(piece)
-                    self.moved_piece_tag = None
+            '''moved_piece_object = self.game.board.find_piece_by_position(old_field)
+
+            if moved_piece_object.piece_type == 'king':
+                if abs(old_field - new_field) == 2:
+                    if new_field > old_field:
+                        rook_field = new_field + 1
+                        rook_new_field = new_field - 1
+                    else:
+                        rook_field = new_field - 2
+                        rook_new_field = new_field + 1
+                    castle_rook = self.game.board.find_piece_by_position(rook_field)
+                    special_move = True'''
+
+            # castle
+            if special_move:
+                castle(moved_piece_object, castle_rook, new_field, rook_new_field)
+            else:
+                # checking check threat ends
+                check_end = True
+                king_safety = True
+                if self.check:
+                    check_end = False
+                    test_board = ChessBoard()
+                    test_board.chess_pieces = self.game.board.copy_board()
+                    piece = test_board.find_piece_by_position(old_field)
+                    field_occupancy = test_board.find_piece_by_position(new_field)
+                    if field_occupancy:
+                        test_board.chess_piece_capture(piece, new_field)
+                    else:
+                        test_board.chess_piece_move(piece, new_field)
+                    if not test_board.test_position()[1] and self.tour % 2 == 1:
+                        check_end = True
+                        self.check = None
+                    elif not test_board.test_position()[0] and self.tour % 2 == 0:
+                        check_end = True
+                        self.check = None
+                # checking if move do not undercover the king
+                if king_safety:
+                    if not old_field == new_field:
+                        test_king_safety = ChessBoard()
+                        test_king_safety.chess_pieces = self.game.board.copy_board()
+                        piece = test_king_safety.find_piece_by_position(old_field)
+                        field_occupancy = test_king_safety.find_piece_by_position(new_field)
+                        if field_occupancy:
+                            test_king_safety.chess_piece_capture(piece, new_field)
+                        else:
+                            test_king_safety.chess_piece_move(piece, new_field)
+                        if test_king_safety.test_position()[0] and self.tour % 2 == 0:
+                            king_safety = False
+                        elif test_king_safety.test_position()[1] and self.tour % 2 == 1:
+                            king_safety = False
+                        test_king_safety = None
+                if new_field and check_end and king_safety:
+                    new_field_occupancy = self.game.board.find_piece_by_position(new_field)
+                    old_field_piece = self.game.board.find_piece_by_position(old_field)
+                    if new_field in old_field_piece.possible_moves:
+                        new_coords = self.create_coords(new_field)
+                        self.board.coords(moved_piece, new_coords[0], new_coords[1])
+                        new_field_description = self.decode_position_number(new_field)
+                        if new_field_occupancy:
+                            if new_field_occupancy.color != old_field_piece.color:
+                                self.board.delete(self.board.find_withtag(new_field_description)[0])
+                                self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field),
+                                                                    new_field)
+                                self.tour += 1
+                            else:
+                                old_field_coords = self.create_coords(old_field)
+                                self.board.coords(moved_piece, old_field_coords[0], old_field_coords[1])
+                                error = True
+                        else:
+                            self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), new_field)
+                            self.tour += 1
+                        if not error:
+                            new_tags = new_field_description
+                            for i in range(1, len(old_tags)):
+                                new_tags += ' ' + old_tags[i]
+                            self.board.itemconfig(moved_piece, tags=new_tags)
+
+                        for piece in self.pieces:
+                            self.game.board.piece_current_moves(piece)
+                        self.moved_piece_tag = None
+                    else:
+                        old_coords = self.create_coords(old_field)
+                        self.board.coords(moved_piece, old_coords[0], old_coords[1])
+                        self.moved_piece_tag = None
+                    points = self.board.find_withtag('green_point')
+                    red_points = self.board.find_withtag('red_point')
+                    if points:
+                        for point in points:
+                            self.board.delete(point)
+                    if red_points:
+                        for point in red_points:
+                            self.board.delete(point)
+
+                    if self.tour % 2 == 0:
+                        if self.game.king_check('white'):
+                            self.check = True
+                    else:
+                        if self.game.king_check('black'):
+                            self.check = True
+
                 else:
                     old_coords = self.create_coords(old_field)
                     self.board.coords(moved_piece, old_coords[0], old_coords[1])
                     self.moved_piece_tag = None
                 points = self.board.find_withtag('green_point')
-                red_points = self.board.find_withtag('red_point')
                 if points:
                     for point in points:
                         self.board.delete(point)
-                if red_points:
-                    for point in red_points:
-                        self.board.delete(point)
 
-                if self.tour % 2 == 0:
-                    if self.game.king_check('white'):
-                        self.check = True
-                else:
-                    if self.game.king_check('black'):
-                        self.check = True
-
-            else:
-                old_coords = self.create_coords(old_field)
-                self.board.coords(moved_piece, old_coords[0], old_coords[1])
-                self.moved_piece_tag = None
-            points = self.board.find_withtag('green_point')
-            if points:
-                for point in points:
-                    self.board.delete(point)
 
 
 
