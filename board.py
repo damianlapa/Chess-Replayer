@@ -228,6 +228,7 @@ class Board:
         return number
 
     def move_piece(self, piece_to_move, new_position, piece_index):
+
         field = self.board.find_withtag('field')
         old_field = self.board.find_withtag('old_field')
         if old_field:
@@ -368,8 +369,7 @@ class Board:
             piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                     piece.position // 8 - 1) * 100
             self.board.create_image(piece_x, piece_y, image=piece_image,
-                                    tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}',
-                                          f'{piece.color}', 'piece'))
+                                    tags=(f'{piece.piece_notation_position()}', f'{piece.color}', f'{piece.piece_type}', 'piece'))
 
         self.board.bind('<1>', self.pick_a_piece)
         self.board.bind('<B1-Motion>', self.piece_move_game)
@@ -409,12 +409,9 @@ class Board:
                     self.change_field_description_to_number(tags.split()[0]))
                 self.game.board.piece_current_moves(picked_piece_object)
                 if picked_piece_object.piece_type == 'king':
-                    print('eto zhe korol')
                     self.game.board.king_castle_possibility(picked_piece_object)
-                    print('#1', picked_piece_object.possible_moves)
                 self.board.tag_raise(picked_piece)
                 self.moved_piece_tag = tags.split()[0]
-                print('#2', picked_piece_object.possible_moves)
                 field_number = self.change_field_description_to_number(self.moved_piece_tag)
                 piece_possible_moves = self.game.board.find_piece_by_position(field_number).possible_moves
                 piece_protected_moves = self.game.board.find_piece_by_position(field_number).protected_moves
@@ -448,10 +445,39 @@ class Board:
         def castle(king, rook, king_position, rook_position):
             king_coords = self.create_coords(king_position)
             rook_coords = self.create_coords(rook_position)
+            king_on_board = self.board.find_withtag(self.decode_position_number(king.position))[0]
+            rook_on_board = self.board.find_withtag(self.decode_position_number(rook.position))[0]
             self.game.board.chess_piece_move(king, king_position)
+
+            rook_index = self.game.board.chess_pieces.index(rook)
+            self.game.board.chess_pieces.remove(rook)
+            rook.new_position(rook_position)
+            self.game.board.chess_pieces.insert(rook_index, rook)
             self.game.board.chess_piece_move(rook, rook_position)
-            self.board.coords(king, king_coords[0], king_coords[1])
-            self.board.coords(rook, rook_coords[0], rook_coords[1])
+            self.board.coords(king_on_board, king_coords[0], king_coords[1])
+            self.board.coords(rook_on_board, rook_coords[0], rook_coords[1])
+
+            king_tags = self.board.itemcget(king_on_board, 'tags')
+            king_old_tags = king_tags.split()
+            king_new_field_description = self.decode_position_number(king_position)
+
+            rook_tags = self.board.itemcget(rook_on_board, 'tags')
+            rook_old_tags = rook_tags.split()
+            rook_new_field_description = self.decode_position_number(rook_position)
+
+            king_new_tags = king_new_field_description
+            for i in range(1, len(king_old_tags)):
+                king_new_tags += ' ' + king_old_tags[i]
+            self.board.itemconfig(king_on_board, tags=king_new_tags)
+
+            rook_new_tags = rook_new_field_description
+            for i in range(1, len(rook_old_tags)):
+                rook_new_tags += ' ' + rook_old_tags[i]
+            self.board.itemconfig(rook_on_board, tags=rook_new_tags)
+
+            self.moved_piece_tag = None
+            self.tour += 1
+
         special_move = False
         error = None
         moved_piece = None
@@ -463,7 +489,7 @@ class Board:
             old_field = self.change_field_description_to_number(old_tags[0])
             new_field = self.piece_move_game(event)
 
-            '''moved_piece_object = self.game.board.find_piece_by_position(old_field)
+            moved_piece_object = self.game.board.find_piece_by_position(old_field)
 
             if moved_piece_object.piece_type == 'king':
                 if abs(old_field - new_field) == 2:
@@ -474,7 +500,7 @@ class Board:
                         rook_field = new_field - 2
                         rook_new_field = new_field + 1
                     castle_rook = self.game.board.find_piece_by_position(rook_field)
-                    special_move = True'''
+                    special_move = True
 
             # castle
             if special_move:
@@ -568,10 +594,10 @@ class Board:
                     old_coords = self.create_coords(old_field)
                     self.board.coords(moved_piece, old_coords[0], old_coords[1])
                     self.moved_piece_tag = None
-                points = self.board.find_withtag('green_point')
-                if points:
-                    for point in points:
-                        self.board.delete(point)
+            points = self.board.find_withtag('green_point')
+            if points:
+                for point in points:
+                    self.board.delete(point)
 
 
 

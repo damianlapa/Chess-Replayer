@@ -211,7 +211,7 @@ class ChessPiece:
 
             king_moves = (move_1, move_2, move_3, move_4, move_5, move_6, move_7, move_8)
             for move in king_moves:
-                if move != 0:
+                if move > 0 and move < 65:
                     self.possible_moves.append(move)
 
             return self.possible_moves
@@ -705,7 +705,12 @@ class ChessBoard:
         piece_index = self.chess_pieces.index(piece)
         self.chess_pieces.remove(piece)
         piece.new_position(new_position)
+        self.piece_current_moves(piece)
         self.chess_pieces.insert(piece_index, piece)
+        for piece in self.chess_pieces:
+            if piece.piece_type == 'rook' or piece.piece_type == 'king':
+                piece.finding_possible_moves()
+                self.piece_current_moves(piece)
 
     def chess_piece_capture(self, piece, new_position):
         self.chess_pieces.remove(self.find_piece_by_position(new_position))
@@ -732,9 +737,6 @@ class ChessBoard:
                     field_2 = 0
                 field_3 = field + (8 * i)
                 field_4 = field - (8 * i)
-
-                if field_2 == 24:
-                    print('error')
 
                 field_1_occupancy = self.find_piece_by_position(field_1)
                 field_2_occupancy = self.find_piece_by_position(field_2)
