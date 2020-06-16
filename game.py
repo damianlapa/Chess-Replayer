@@ -671,6 +671,7 @@ class ChessBoard:
         self.black_short_castle_possibility = True
         self.white_short_castle_possibility = True
         self.white_long_castle_possibility = True
+        self.en_passant = None
 
     def __str__(self):
         for piece in self.chess_pieces:
@@ -686,6 +687,7 @@ class ChessBoard:
         return False
 
     def chess_piece_move(self, piece, new_position):
+        self.en_passant = False
         if piece.piece_type == 'king':
             if piece.color == 'white':
                 self.white_long_castle_possibility = False
@@ -702,6 +704,11 @@ class ChessBoard:
                 self.black_long_castle_possibility = False
             elif piece.position == 64:
                 self.black_short_castle_possibility = False
+
+        elif piece.piece_type == 'pawn':
+            if abs(piece.position - new_position) == 16:
+                self.en_passant = (True, new_position, piece.color)
+
         piece_index = self.chess_pieces.index(piece)
         self.chess_pieces.remove(piece)
         piece.new_position(new_position)
@@ -711,6 +718,8 @@ class ChessBoard:
             if piece.piece_type == 'rook' or piece.piece_type == 'king':
                 piece.finding_possible_moves()
                 self.piece_current_moves(piece)
+
+        print(self.en_passant)
 
     def chess_piece_capture(self, piece, new_position):
         self.chess_pieces.remove(self.find_piece_by_position(new_position))
@@ -910,6 +919,7 @@ class ChessBoard:
                 if self.find_piece_by_position(piece.position + 9) and piece.position % 8 != 0:
                     if self.find_piece_by_position(piece.position + 9).color == piece.color:
                         piece.protected_moves.append(piece.position + 9)
+                        piece.possible_moves.remove(piece.position + 9)
                 else:
                     try:
                         piece.possible_moves.remove(piece.position + 9)
@@ -918,6 +928,7 @@ class ChessBoard:
                 if self.find_piece_by_position(piece.position + 7) and piece.position % 8 != 1:
                     if self.find_piece_by_position(piece.position + 7).color == piece.color:
                         piece.protected_moves.append(piece.position + 7)
+                        piece.possible_moves.remove(piece.position + 7)
                 else:
                     try:
                         piece.possible_moves.remove(piece.position + 7)
@@ -933,6 +944,7 @@ class ChessBoard:
                 if self.find_piece_by_position(piece.position - 9) and piece.position % 8 != 1:
                     if self.find_piece_by_position(piece.position - 9).color == piece.color:
                         piece.protected_moves.append(piece.position - 9)
+                        piece.possible_moves.remove(piece.position - 9)
                 else:
                     try:
                         piece.possible_moves.remove(piece.position - 9)
@@ -941,6 +953,7 @@ class ChessBoard:
                 if self.find_piece_by_position(piece.position - 7) and piece.position % 8 != 0:
                     if self.find_piece_by_position(piece.position - 7).color == piece.color:
                         piece.protected_moves.append(piece.position - 7)
+                        piece.possible_moves.remove(piece.position - 7)
                 else:
                     try:
                         piece.possible_moves.remove(piece.position - 7)
@@ -952,7 +965,19 @@ class ChessBoard:
                         piece.possible_moves.remove(piece.position - 16)
                     except ValueError:
                         pass
-
+            if self.en_passant:
+                if piece.color != self.en_passant[2]:
+                    possibility_checker = piece.position // 8
+                    if piece.position % 8 == 0:
+                        possibility_checker -= 1
+                    if possibility_checker == self.en_passant[1] // 8:
+                        if piece.position % 8 == 0 and piece.position - 1 == self.en_passant[1]:
+                            piece.possible_moves.append(self.en_passant[1] + (- 8 if piece.color == 'black' else 8))
+                        elif piece.position % 8 == 1 and piece.position + 1 == self.en_passant[1]:
+                            piece.possible_moves.append(self.en_passant[1] + (- 8 if piece.color == 'black' else 8))
+                        elif abs(piece.position - self.en_passant[1]) == 1:
+                            piece.possible_moves.append(self.en_passant[1] + (- 8 if piece.color == 'black' else 8))
+                        print('dodaje')
             return piece.possible_moves
 
     def test_position(self):
@@ -1011,7 +1036,6 @@ class ChessBoard:
                         rook = self.find_piece_by_position(64)
                         rook.possible_moves.append(62)
                         self.chess_pieces.insert(king_index, king)
-                        # self.castle(king, rook, 'short')
             if self.black_long_castle_possibility:
                 if check_fields_emptiness((58, 59, 60)):
                     if not check_castle_block(59, 60):
@@ -1021,7 +1045,6 @@ class ChessBoard:
                         rook = self.find_piece_by_position(57)
                         rook.possible_moves.append(60)
                         self.chess_pieces.insert(king_index, king)
-                        # self.castle(king, rook, 'short')
         else:
             if self.white_short_castle_possibility:
                 if check_fields_emptiness((6, 7)):
@@ -1060,11 +1083,11 @@ class TwoPlayersGame:
         self.set_all_pieces()
 
     def set_all_pieces(self):
-        '''for i in range(0, 8):
+        for i in range(0, 8):
             pawn = ChessPiece('pawn', 9 + i)
             self.pieces.append(pawn)
             black_pawn = ChessPiece('pawn', 49 + i, 'black')
-            self.pieces.append(black_pawn)'''
+            self.pieces.append(black_pawn)
         for i in range(0, 2):
             piece = ChessPiece('rook', 1 + i * 7)
             black_piece = ChessPiece('rook', 57 + i * 7, 'black')

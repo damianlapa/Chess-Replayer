@@ -410,6 +410,9 @@ class Board:
                 self.game.board.piece_current_moves(picked_piece_object)
                 if picked_piece_object.piece_type == 'king':
                     self.game.board.king_castle_possibility(picked_piece_object)
+                elif picked_piece_object.piece_type == 'pawn':
+                    self.game.board.piece_current_moves(picked_piece_object)
+                    print(picked_piece_object.possible_moves)
                 self.board.tag_raise(picked_piece)
                 self.moved_piece_tag = tags.split()[0]
                 field_number = self.change_field_description_to_number(self.moved_piece_tag)
@@ -418,7 +421,7 @@ class Board:
                 for num in piece_possible_moves:
                     x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
                     y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
-                    self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord + 20, fill='green',
+                    self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord +    20, fill='green',
                                            tag='green_point')
                 '''for num in piece_protected_moves:
                     x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
@@ -490,17 +493,20 @@ class Board:
             new_field = self.piece_move_game(event)
 
             moved_piece_object = self.game.board.find_piece_by_position(old_field)
+            self.game.board.piece_current_moves(moved_piece_object)
 
             if moved_piece_object.piece_type == 'king':
-                if abs(old_field - new_field) == 2:
-                    if new_field > old_field:
-                        rook_field = new_field + 1
-                        rook_new_field = new_field - 1
-                    else:
-                        rook_field = new_field - 2
-                        rook_new_field = new_field + 1
-                    castle_rook = self.game.board.find_piece_by_position(rook_field)
-                    special_move = True
+                self.game.board.king_castle_possibility(moved_piece_object)
+                if new_field in moved_piece_object.possible_moves:
+                    if abs(old_field - new_field) == 2:
+                        if new_field > old_field:
+                            rook_field = new_field + 1
+                            rook_new_field = new_field - 1
+                        else:
+                            rook_field = new_field - 2
+                            rook_new_field = new_field + 1
+                        castle_rook = self.game.board.find_piece_by_position(rook_field)
+                        special_move = True
 
             # castle
             if special_move:
@@ -598,6 +604,12 @@ class Board:
             if points:
                 for point in points:
                     self.board.delete(point)
+
+            if self.check:
+                if self.tour % 2 == 1:
+                    print('Black king check')
+                else:
+                    print('White King check')
 
 
 
