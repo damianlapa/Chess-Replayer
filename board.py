@@ -129,12 +129,15 @@ class Board:
         self.pieces = self.game.pieces
         self.counter = 0
         self.game_desc_window = Canvas(self.env, width=450, height=350, bg='#FFF9BC')
+        self.promotion_board = Canvas(self.env, width=400, height=100, bg='grey')
         self.game_desc_window.place(x=975, y=250)
         self.row = 1
         self.mode = mode
         self.moved_piece_tag = None
         self.tour = 0
         self.check = False
+        self.possible_promotions = []
+        self.promotion_data = None
         if self.mode == '1':
             self.game_description()
             self.display()
@@ -369,7 +372,8 @@ class Board:
             piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                     piece.position // 8 - 1) * 100
             self.board.create_image(piece_x, piece_y, image=piece_image,
-                                    tags=(f'{piece.piece_notation_position()}', f'{piece.color}', f'{piece.piece_type}', 'piece'))
+                                    tags=(f'{piece.piece_notation_position()}', f'{piece.color}', f'{piece.piece_type}',
+                                          'piece'))
 
         self.board.bind('<1>', self.pick_a_piece)
         self.board.bind('<B1-Motion>', self.piece_move_game)
@@ -381,7 +385,7 @@ class Board:
         return x_coord, y_coord
 
     def pick_a_piece(self, event):
-
+        self.promotion_data = None
         picked_piece = None
         x = event.x
         y = event.y
@@ -421,7 +425,7 @@ class Board:
                 for num in piece_possible_moves:
                     x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
                     y_coord = 740 - (num // 8) * 100 if num % 8 != 0 else 740 - ((num // 8) - 1) * 100
-                    self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord +    20, fill='green',
+                    self.board.create_oval(x_coord, y_coord, x_coord + 20, y_coord + 20, fill='green',
                                            tag='green_point')
                 '''for num in piece_protected_moves:
                     x_coord = ((num % 8) - 1) * 100 + 40 if num % 8 != 0 else 740
@@ -445,6 +449,7 @@ class Board:
     def piece_new_place(self, event):
         castle_rook = None
         rook_new_field = 0
+
         def castle(king, rook, king_position, rook_position):
             king_coords = self.create_coords(king_position)
             rook_coords = self.create_coords(rook_position)
@@ -482,6 +487,7 @@ class Board:
             self.tour += 1
 
         special_move = False
+        promotion = False
         error = None
         moved_piece = None
         if self.moved_piece_tag:
@@ -507,6 +513,15 @@ class Board:
                             rook_new_field = new_field + 1
                         castle_rook = self.game.board.find_piece_by_position(rook_field)
                         special_move = True
+
+            if moved_piece_object.piece_type == 'pawn':
+                if new_field in moved_piece_object.possible_moves:
+                    if moved_piece_object.color == 'black':
+                        if new_field in range(1, 9):
+                            promotion = True
+                    else:
+                        if new_field in range(57, 65):
+                            promotion = True
 
             # castle
             if special_move:
@@ -565,7 +580,8 @@ class Board:
                                 self.board.coords(moved_piece, old_field_coords[0], old_field_coords[1])
                                 error = True
                         else:
-                            self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), new_field)
+                            self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field),
+                                                             new_field)
                             self.tour += 1
                         if not error:
                             new_tags = new_field_description
@@ -573,9 +589,16 @@ class Board:
                                 new_tags += ' ' + old_tags[i]
                             self.board.itemconfig(moved_piece, tags=new_tags)
 
+                        if promotion:
+                            self.promotion_board.place(x=300, y=400)
+                            self.promotion_board_pick()
+
+                            self.promotion_data = (new_field, moved_piece_object)
+
                         for piece in self.pieces:
                             self.game.board.piece_current_moves(piece)
                         self.moved_piece_tag = None
+
                     else:
                         old_coords = self.create_coords(old_field)
                         self.board.coords(moved_piece, old_coords[0], old_coords[1])
@@ -611,8 +634,60 @@ class Board:
                 else:
                     print('White King check')
 
+    def promotion_board_pick(self):
 
+        self.board.unbind('<1>')
+        self.board.unbind('<B1-Motion>')
+        self.board.unbind('<ButtonRelease-1>')
 
+        if self.tour % 2 == 1:
+            self.possible_promotions = [ChessPiece('queen'), ChessPiece('rook'), ChessPiece('bishop'),
+                                        ChessPiece('knight')]
+        else:
+            self.possible_promotions = [ChessPiece('queen', None, 'black'), ChessPiece('rook', None, 'black'),
+                                        ChessPiece('bishop', None, 'black'),
+                                        ChessPiece('knight', None, 'black')]
+        for i in range(0, len(self.possible_promotions)):
+            self.promotion_board.create_image(50 + (80 * i), 50, image=self.possible_promotions[i].representation(),
+                                              tags=(self.possible_promotions[i].piece_type, 'piece'))
+
+        self.promotion_board.bind('<1>', self.pawn_promotion_board)
+
+    def pawn_promotion_board(self, event):
+
+        possibilities = self.promotion_board.find_withtag('piece')
+
+        choice = self.promotion_board.find_closest(event.x, event.y)[0]
+
+        if choice in possibilities:
+
+            new_field = self.promotion_data[0]
+            moved_piece_object = self.promotion_data[1]
+            piece_type = self.promotion_board.itemcget(choice, 'tags').split()[0]
+
+            print(piece_type)
+
+            print('MPO:', moved_piece_object)
+
+            self.board.delete(self.board.find_withtag(self.decode_position_number(new_field)))
+            new_piece = self.game.board.pawn_promotion(moved_piece_object, new_field, piece_type)
+            piece_image = new_piece.representation()
+            piece_x = (new_piece.position % 8 - 1) * 100 + 50 if new_piece.position % 8 != 0 else 750
+            piece_y = 800 - (
+                    new_piece.position // 8) * 100 - 50 if new_piece.position % 8 != 0 else 750 - (
+                    new_piece.position // 8 - 1) * 100
+            self.board.create_image(piece_x, piece_y, image=piece_image,
+                                    tags=(f'{new_piece.piece_notation_position()}',
+                                          f'{new_piece.color}', f'{new_piece.piece_type}',
+                                          'piece'))
+
+            self.promotion_board.unbind('<1>')
+
+            self.promotion_board.place_forget()
+
+            self.board.bind('<1>', self.pick_a_piece)
+            self.board.bind('<B1-Motion>', self.piece_move_game)
+            self.board.bind('<ButtonRelease-1>', self.piece_new_place)
 
 
 '''board = Board(Tk())

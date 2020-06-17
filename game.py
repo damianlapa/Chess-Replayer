@@ -12,7 +12,8 @@ class ChessPiece:
         self.possible_moves = []
         self.protected_moves = []
         self.border_fields = ()
-        self.finding_possible_moves()
+        if self.position:
+            self.finding_possible_moves()
         self.image = None
 
     def __str__(self):
@@ -719,15 +720,26 @@ class ChessBoard:
                 self.chess_pieces.remove(deleted_piece)
                 self.en_passant_capture = False
 
+            '''if piece.color == 'black':
+                if new_position in range(1, 9):
+                    self.pawn_promotion(piece, 'queen')
+            else:
+                if new_position in range(57, 65):
+                    self.pawn_promotion(piece, new_position, 'queen')'''
+
         piece_index = self.chess_pieces.index(piece)
         self.chess_pieces.remove(piece)
         piece.new_position(new_position)
         self.piece_current_moves(piece)
         self.chess_pieces.insert(piece_index, piece)
         for piece in self.chess_pieces:
+
             if piece.piece_type == 'rook' or piece.piece_type == 'king':
                 piece.finding_possible_moves()
                 self.piece_current_moves(piece)
+            if piece.color == 'white':
+                print(piece, piece.piece_type, piece.color, piece.position, piece.possible_moves)
+        print('#################################')
 
     def chess_piece_capture(self, piece, new_position):
         captured_piece = self.find_piece_by_position(new_position)
@@ -916,7 +928,10 @@ class ChessBoard:
                     if piece.color != piece_.color and piece_.piece_type != 'king':
                         self.piece_current_moves(piece_)
                         if move in piece_.possible_moves or move in piece_.protected_moves:
-                            moves_to_remove.append(move)
+                            if piece_.piece_type == 'pawn' and (piece_.position - move) == 8:
+                                pass
+                            else:
+                                moves_to_remove.append(move)
             for move in moves_to_remove:
                 if move in piece.possible_moves:
                     piece.possible_moves.remove(move)
@@ -1094,6 +1109,15 @@ class ChessBoard:
                 self.chess_piece_move(king, 59)
                 self.chess_piece_move(rook, 60)
 
+    def pawn_promotion(self, pawn, new_position, new_piece_type):
+        new_piece_color = pawn.color
+        new_piece_position = new_position
+        self.chess_pieces.remove(pawn)
+        new_piece = ChessPiece(new_piece_type, new_piece_position, new_piece_color)
+        self.piece_current_moves(new_piece)
+        self.chess_pieces.append(new_piece)
+        return new_piece
+
 class TwoPlayersGame:
     def __init__(self):
         self.move_counter = 0
@@ -1102,12 +1126,16 @@ class TwoPlayersGame:
         self.set_all_pieces()
 
     def set_all_pieces(self):
-        for i in range(0, 8):
+        for i in range(0, 1):
             pawn = ChessPiece('pawn', 9 + i)
+            test_pawn = ChessPiece('pawn', 55)
+            test_rook = ChessPiece('rook', 62, 'black')
             self.pieces.append(pawn)
+            self.pieces.append(test_pawn)
+            self.pieces.append(test_rook)
             black_pawn = ChessPiece('pawn', 49 + i, 'black')
             self.pieces.append(black_pawn)
-        for i in range(0, 2):
+        '''for i in range(0, 2):
             piece = ChessPiece('rook', 1 + i * 7)
             black_piece = ChessPiece('rook', 57 + i * 7, 'black')
             self.pieces.append(piece)
@@ -1117,21 +1145,20 @@ class TwoPlayersGame:
             black_piece = ChessPiece('knight', 58 + i * 5, 'black')
             self.pieces.append(piece)
             self.pieces.append(black_piece)
-            '''
         for i in range(0, 2):
             piece = ChessPiece('bishop', 3 + i * 3)
             black_piece = ChessPiece('bishop', 59 + i * 3, 'black')
             self.pieces.append(piece)
-            self.pieces.append(black_piece)
+            self.pieces.append(black_piece)'''
 
         white_queen = ChessPiece('queen', 4)
 
-        black_queen = ChessPiece('queen', 60, 'black')'''
+        black_queen = ChessPiece('queen', 60, 'black')
         white_king = ChessPiece('king', 5)
         black_king = ChessPiece('king', 61, 'black')
 
-        '''self.pieces.append(white_queen)
-        self.pieces.append(black_queen)'''
+        self.pieces.append(white_queen)
+        self.pieces.append(black_queen)
         self.pieces.append(white_king)
         self.pieces.append(black_king)
 
