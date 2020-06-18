@@ -416,7 +416,6 @@ class Board:
                     self.game.board.king_castle_possibility(picked_piece_object)
                 elif picked_piece_object.piece_type == 'pawn':
                     self.game.board.piece_current_moves(picked_piece_object)
-                    print(picked_piece_object.possible_moves)
                 self.board.tag_raise(picked_piece)
                 self.moved_piece_tag = tags.split()[0]
                 field_number = self.change_field_description_to_number(self.moved_piece_tag)
@@ -531,21 +530,22 @@ class Board:
                 check_end = True
                 king_safety = True
                 if self.check:
-                    check_end = False
-                    test_board = ChessBoard()
-                    test_board.chess_pieces = self.game.board.copy_board()
-                    piece = test_board.find_piece_by_position(old_field)
-                    field_occupancy = test_board.find_piece_by_position(new_field)
-                    if field_occupancy:
-                        test_board.chess_piece_capture(piece, new_field)
-                    else:
-                        test_board.chess_piece_move(piece, new_field)
-                    if not test_board.test_position()[1] and self.tour % 2 == 1:
-                        check_end = True
-                        self.check = None
-                    elif not test_board.test_position()[0] and self.tour % 2 == 0:
-                        check_end = True
-                        self.check = None
+                    if old_field != new_field:
+                        check_end = False
+                        test_board = ChessBoard()
+                        test_board.chess_pieces = self.game.board.copy_board()
+                        piece = test_board.find_piece_by_position(old_field)
+                        field_occupancy = test_board.find_piece_by_position(new_field)
+                        if field_occupancy:
+                            test_board.chess_piece_capture(piece, new_field)
+                        else:
+                            test_board.chess_piece_move(piece, new_field)
+                        if not test_board.test_position()[1] and self.tour % 2 == 1:
+                            check_end = True
+                            self.check = None
+                        elif not test_board.test_position()[0] and self.tour % 2 == 0:
+                            check_end = True
+                            self.check = None
                 # checking if move do not undercover the king
                 if king_safety:
                     if not old_field == new_field:
@@ -562,6 +562,7 @@ class Board:
                         elif test_king_safety.test_position()[1] and self.tour % 2 == 1:
                             king_safety = False
                         test_king_safety = None
+
                 if new_field and check_end and king_safety:
                     new_field_occupancy = self.game.board.find_piece_by_position(new_field)
                     old_field_piece = self.game.board.find_piece_by_position(old_field)
@@ -628,11 +629,6 @@ class Board:
                 for point in points:
                     self.board.delete(point)
 
-            if self.check:
-                if self.tour % 2 == 1:
-                    print('Black king check')
-                else:
-                    print('White King check')
 
     def promotion_board_pick(self):
 
@@ -664,10 +660,6 @@ class Board:
             new_field = self.promotion_data[0]
             moved_piece_object = self.promotion_data[1]
             piece_type = self.promotion_board.itemcget(choice, 'tags').split()[0]
-
-            print(piece_type)
-
-            print('MPO:', moved_piece_object)
 
             self.board.delete(self.board.find_withtag(self.decode_position_number(new_field)))
             new_piece = self.game.board.pawn_promotion(moved_piece_object, new_field, piece_type)

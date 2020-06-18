@@ -716,7 +716,6 @@ class ChessBoard:
 
             if self.en_passant_capture:
                 deleted_piece = self.find_piece_by_position(new_position + (8 if piece.color == 'black' else - 8))
-                print(deleted_piece, deleted_piece.position)
                 self.chess_pieces.remove(deleted_piece)
                 self.en_passant_capture = False
 
@@ -737,9 +736,6 @@ class ChessBoard:
             if piece.piece_type == 'rook' or piece.piece_type == 'king':
                 piece.finding_possible_moves()
                 self.piece_current_moves(piece)
-            if piece.color == 'white':
-                print(piece, piece.piece_type, piece.color, piece.position, piece.possible_moves)
-        print('#################################')
 
     def chess_piece_capture(self, piece, new_position):
         captured_piece = self.find_piece_by_position(new_position)
