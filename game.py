@@ -921,17 +921,23 @@ class ChessBoard:
                         piece.protected_moves.append(move)
                         moves_to_remove.append(move)
                 for piece_ in self.chess_pieces:
-                    if piece.color != piece_.color and piece_.piece_type != 'king':
-                        self.piece_current_moves(piece_)
-                        if move in piece_.possible_moves or move in piece_.protected_moves:
-                            if piece_.piece_type == 'pawn' and (piece_.position - move) == 8:
-                                pass
-                            else:
+                    if piece_.piece_type != 'pawn':
+                        if piece.color != piece_.color and piece_.piece_type != 'king':
+                            self.piece_current_moves(piece_)
+                            if move in piece_.possible_moves or move in piece_.protected_moves:
                                 moves_to_remove.append(move)
+            for piece_ in self.chess_pieces:
+                if piece.color != piece_.color and piece_.piece_type == 'pawn':
+                    if piece_.position % 8 == 1:
+                        moves_to_remove.append(piece_.position + (-7 if piece_.color == 'black' else 9))
+                    elif piece.position % 8 == 0:
+                        moves_to_remove.append(piece_.position + (-9 if piece_.color == 'black' else 7))
+                    else:
+                        moves_to_remove.append(piece_.position + (-7 if piece_.color == 'black' else 9))
+                        moves_to_remove.append(piece_.position + (-9 if piece_.color == 'black' else 7))
             for move in moves_to_remove:
                 if move in piece.possible_moves:
                     piece.possible_moves.remove(move)
-
             return piece.possible_moves
 
         if piece.piece_type == 'pawn':
