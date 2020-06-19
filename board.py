@@ -492,13 +492,17 @@ class Board:
         if self.moved_piece_tag:
             moved_piece = self.board.find_withtag(self.moved_piece_tag)
         if moved_piece:
-            piece_tags = self.board.itemcget(moved_piece, 'tags')
-            old_tags = piece_tags.split()
-            old_field = self.change_field_description_to_number(old_tags[0])
-            new_field = self.piece_move_game(event)
+            try:
+                piece_tags = self.board.itemcget(moved_piece, 'tags')
+                old_tags = piece_tags.split()
+                old_field = self.change_field_description_to_number(old_tags[0])
+                new_field = self.piece_move_game(event)
 
-            moved_piece_object = self.game.board.find_piece_by_position(old_field)
-            self.game.board.piece_current_moves(moved_piece_object)
+                moved_piece_object = self.game.board.find_piece_by_position(old_field)
+                self.game.board.piece_current_moves(moved_piece_object)
+
+            except IndexError:
+                print('error')
 
             if moved_piece_object.piece_type == 'king':
                 self.game.board.king_castle_possibility(moved_piece_object)

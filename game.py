@@ -1128,16 +1128,12 @@ class TwoPlayersGame:
         self.set_all_pieces()
 
     def set_all_pieces(self):
-        for i in range(0, 1):
+        for i in range(0, 8):
             pawn = ChessPiece('pawn', 9 + i)
-            test_pawn = ChessPiece('pawn', 55)
-            test_rook = ChessPiece('rook', 62, 'black')
             self.pieces.append(pawn)
-            self.pieces.append(test_pawn)
-            self.pieces.append(test_rook)
             black_pawn = ChessPiece('pawn', 49 + i, 'black')
             self.pieces.append(black_pawn)
-        '''for i in range(0, 2):
+        for i in range(0, 2):
             piece = ChessPiece('rook', 1 + i * 7)
             black_piece = ChessPiece('rook', 57 + i * 7, 'black')
             self.pieces.append(piece)
@@ -1151,7 +1147,7 @@ class TwoPlayersGame:
             piece = ChessPiece('bishop', 3 + i * 3)
             black_piece = ChessPiece('bishop', 59 + i * 3, 'black')
             self.pieces.append(piece)
-            self.pieces.append(black_piece)'''
+            self.pieces.append(black_piece)
 
         white_queen = ChessPiece('queen', 4)
 
