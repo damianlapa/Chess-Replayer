@@ -550,7 +550,6 @@ class NewGame:
                                    rook_new_position, rook_index
 
             elif move_type == 'long castle':
-                rook = None
                 king = None
                 king_old_position = None
                 king_new_position = None
@@ -674,6 +673,10 @@ class ChessBoard:
         self.white_long_castle_possibility = True
         self.en_passant = None
         self.en_passant_capture = None
+        self.move_description = None
+        self.game_description = []
+        self.capture_marker = None
+        self.castle_indicator = None
 
     def __str__(self):
         for piece in self.chess_pieces:
@@ -692,6 +695,7 @@ class ChessBoard:
         if self.en_passant:
             if piece.piece_type == 'pawn' and new_position == self.en_passant[3]:
                 self.en_passant_capture = True
+                self.capture_marker = True
         self.en_passant = False
         if piece.piece_type == 'king':
             if piece.color == 'white':
@@ -712,19 +716,66 @@ class ChessBoard:
 
         elif piece.piece_type == 'pawn':
             if abs(piece.position - new_position) == 16:
-                self.en_passant = (True, new_position, piece.color, new_position + (8 if piece.color == 'black' else -8))
+                self.en_passant = (
+                True, new_position, piece.color, new_position + (8 if piece.color == 'black' else -8))
 
             if self.en_passant_capture:
                 deleted_piece = self.find_piece_by_position(new_position + (8 if piece.color == 'black' else - 8))
                 self.chess_pieces.remove(deleted_piece)
                 self.en_passant_capture = False
 
-            '''if piece.color == 'black':
-                if new_position in range(1, 9):
-                    self.pawn_promotion(piece, 'queen')
+        field_notation = self.change_field_number_to_description(new_position)
+
+        if piece.piece_type == 'pawn':
+            self.move_description = field_notation
+        elif piece.piece_type == 'bishop':
+            self.move_description = 'B' + field_notation
+        elif piece.piece_type == 'queen':
+            self.move_description = 'Q' + field_notation
+        elif piece.piece_type == 'king':
+            self.move_description = 'K' + field_notation
+        elif piece.piece_type == 'rook':
+            self.move_description = 'R' + field_notation
+            for piece__ in self.chess_pieces:
+                if piece__.piece_type == 'rook' and piece__.color == piece.color:
+                    if piece != piece__:
+                        if new_position in piece__.possible_moves:
+                            if piece.position % 8 == piece__.position % 8:
+                                self.move_description = 'R'
+                                self.move_description += str(
+                                    (piece.position // 8) + 1 if piece.position % 8 != 0 else piece.position // 8)
+                                self.move_description += field_notation
+                            else:
+                                self.move_description = 'R' + alphabet[
+                                    piece.position % 8 - 1 if piece.position % 8 != 0 else 7] + field_notation
+        else:
+            self.move_description = 'N' + field_notation
+            for piece__ in self.chess_pieces:
+                if piece__.piece_type == 'knight' and piece__.color == piece.color:
+                    if piece != piece__:
+                        if new_position in piece__.possible_moves:
+                            if piece.position % 8 == piece__.position % 8:
+                                self.move_description = 'N'
+                                self.move_description += str(
+                                    (piece.position // 8) + 1 if piece.position % 8 != 0 else piece.position // 8)
+                                self.move_description += field_notation
+                            else:
+                                self.move_description = 'N' + alphabet[
+                                    piece.position % 8 - 1 if piece.position % 8 != 0 else 7] + field_notation
+
+        if self.capture_marker:
+            if piece.piece_type == 'pawn':
+                self.move_description = alphabet[
+                                            piece.position % 8 - 1 if piece.position % 8 != 0 else 7] + self.move_description
+            x = self.move_description.split(f'{field_notation}')
+            self.move_description = x[0] + 'x' + field_notation
+
+        if self.castle_indicator:
+            if piece.position < new_position:
+                self.move_description = 'O-O'
             else:
-                if new_position in range(57, 65):
-                    self.pawn_promotion(piece, new_position, 'queen')'''
+                self.move_description = 'O-O-O'
+            self.castle_indicator = None
 
         piece_index = self.chess_pieces.index(piece)
         self.chess_pieces.remove(piece)
@@ -737,7 +788,18 @@ class ChessBoard:
                 piece.finding_possible_moves()
                 self.piece_current_moves(piece)
 
+        if self.king_check('white') or self.king_check('black'):
+            self.move_description += '+'
+
+        self.game_description.append(self.move_description)
+
+        self.capture_marker = None
+
+        if len(self.game_description) > 1:
+            print(self.create_pgn())
+
     def chess_piece_capture(self, piece, new_position):
+        self.capture_marker = True
         captured_piece = self.find_piece_by_position(new_position)
         if captured_piece:
             self.chess_pieces.remove(captured_piece)
@@ -1102,14 +1164,14 @@ class ChessBoard:
                         rook.possible_moves.append(4)
                         self.chess_pieces.insert(king_index, king)
 
-    def castle(self, king, rook, mode):
-        if king.color == 'black':
-            if mode == 'short':
-                self.chess_piece_move(king, 63)
-                self.chess_piece_move(rook, 62)
-            else:
-                self.chess_piece_move(king, 59)
-                self.chess_piece_move(rook, 60)
+    def castle(self, king, rook, king_position, rook_position):
+        self.castle_indicator = True
+        self.chess_piece_move(king, king_position)
+        rook_index = self.chess_pieces.index(rook)
+        self.chess_pieces.remove(rook)
+        rook.new_position(rook_position)
+        self.piece_current_moves(rook)
+        self.chess_pieces.insert(rook_index, rook)
 
     def pawn_promotion(self, pawn, new_position, new_piece_type):
         new_piece_color = pawn.color
@@ -1119,6 +1181,26 @@ class ChessBoard:
         self.piece_current_moves(new_piece)
         self.chess_pieces.append(new_piece)
         return new_piece
+
+    def change_field_number_to_description(self, field_nr):
+        field_column = alphabet[field_nr % 8 - 1 if field_nr % 8 != 0 else 7]
+        field_row = field_nr // 8 + 1 if field_nr % 8 != 0 else field_nr // 8 - 1
+        field_notation = field_column + str(field_row)
+
+        return field_notation
+
+    def create_pgn(self):
+        move = 1
+        pgn_text = ''
+        for num in range(len(self.game_description)):
+            if num % 2 == 0:
+                pgn_text += str(move) + '. ' + self.game_description[num] + ' '
+                move += 1
+            else:
+                pgn_text += str(self.game_description[num]) + ' '
+        return pgn_text
+
+
 
 class TwoPlayersGame:
     def __init__(self):
@@ -1181,7 +1263,7 @@ class TwoPlayersGame:
         else:
             return False
 
-    def white_move(self,):
+    def white_move(self, ):
         pass
 
     def black_move(self):
@@ -1205,3 +1287,4 @@ test_game = '''
 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
 '''
 test_2 = '1. e4 b5 2. h4 Nc6 3. d4 Rb8 4. g4'
+test_3 = '1. e4 e5 2. d4 d5 3. exd5 exd4 4. Qe2+ Qe7 5. Nc3 Qxe2+ 6. Bxe2 dxc3 7. bxc3 '

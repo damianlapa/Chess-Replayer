@@ -89,7 +89,8 @@ class GameMenu:
         32. Qe5 Qe8 33. a4 Qd8 34. R1f2 Qe8 35. R2f3 Qd8 36. Bd3 Qe8
         37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
         '''
-        self.game = NewGame(test_game)
+        test_2 = '1. e4 e5 2. d4 d5 3. exd5 exd4 4. Qe2+ Qe7 5. Nc3 Qxe2+ 6. Bxe2 dxc3 7. bxc3'
+        self.game = NewGame(test_2)
         self.load_game()
 
     def load_game(self):
@@ -281,6 +282,7 @@ class Board:
             self.game_desc_window.tag_raise(desc)
 
         except IndexError:
+            print('error')
             pass
         if field_check:
             self.board.delete(field_check[0])
@@ -454,13 +456,9 @@ class Board:
             rook_coords = self.create_coords(rook_position)
             king_on_board = self.board.find_withtag(self.decode_position_number(king.position))[0]
             rook_on_board = self.board.find_withtag(self.decode_position_number(rook.position))[0]
-            self.game.board.chess_piece_move(king, king_position)
 
-            rook_index = self.game.board.chess_pieces.index(rook)
-            self.game.board.chess_pieces.remove(rook)
-            rook.new_position(rook_position)
-            self.game.board.chess_pieces.insert(rook_index, rook)
-            self.game.board.chess_piece_move(rook, rook_position)
+            self.game.board.castle(king, rook, king_position, rook_position)
+
             self.board.coords(king_on_board, king_coords[0], king_coords[1])
             self.board.coords(rook_on_board, rook_coords[0], rook_coords[1])
 
