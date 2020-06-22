@@ -139,6 +139,7 @@ class Board:
         self.check = False
         self.possible_promotions = []
         self.promotion_data = None
+        self.move_counter = 0
         if self.mode == '1':
             self.game_description()
             self.display()
@@ -290,7 +291,7 @@ class Board:
         end_condition = self.board.find_withtag('game_finished')
         if end_condition:
             self.board.delete(end_condition[0])
-        if self.game.game_moves[self.counter] == 'O-O':
+        if self.game.game_moves[self.counter] == 'O-O' or self.game.game_moves[self.counter] == 'O-O-O':
             a, b, c, d, e, f = self.game.move(self.counter)
             self.move_piece(a, b, c)
             self.move_piece(d, e, f)
@@ -631,6 +632,7 @@ class Board:
                 for point in points:
                     self.board.delete(point)
 
+            self.display_current_game_moves()
 
     def promotion_board_pick(self):
 
@@ -658,7 +660,6 @@ class Board:
         choice = self.promotion_board.find_closest(event.x, event.y)[0]
 
         if choice in possibilities:
-
             new_field = self.promotion_data[0]
             moved_piece_object = self.promotion_data[1]
             piece_type = self.promotion_board.itemcget(choice, 'tags').split()[0]
@@ -682,6 +683,76 @@ class Board:
             self.board.bind('<1>', self.pick_a_piece)
             self.board.bind('<B1-Motion>', self.piece_move_game)
             self.board.bind('<ButtonRelease-1>', self.piece_new_place)
+
+    def display_current_game_moves(self):
+        try:
+            previous = self.game_desc_window.find_withtag('move{}'.format(self.move_counter - 1))[0]
+            if self.move_counter % 12 == 0:
+                self.game_desc_window.create_text(10, 10 + self.move_counter // 12 * 10,
+                                                  text='{}.'.format(self.move_counter // 3 + 1), anchor='w',
+                                                  tag='move{}'.format(self.move_counter), font=('Arial bold', 12))
+                self.move_counter += 1
+                self.game_desc_window.create_text(20, 10 + self.move_counter // 12 * 15,
+                                                  text=self.game.board.game_description[-1],
+                                                  anchor='w', tag='move{}'.format(self.move_counter),
+                                                  font=('Arial bold', 12))
+                self.move_counter += 1
+            elif self.move_counter % 3 == 0 or self.move_counter == 1:
+                previous_coords = self.game_desc_window.bbox(previous)
+
+                self.game_desc_window.create_text(previous_coords[2] + 10, 10 + self.move_counter // 12 * 15,
+                                                  text='{}.'.format(self.move_counter // 3 + 1), anchor='w',
+                                                  tag='move{}'.format(self.move_counter), font=('Arial bold', 12))
+                self.move_counter += 1
+            previous = self.game_desc_window.find_withtag('move{}'.format(self.move_counter - 1))[0]
+            previous_coords = self.game_desc_window.bbox(previous)
+            self.game_desc_window.create_text(previous_coords[2] + 10, 10 + self.move_counter // 12 * 15,
+                                              text=self.game.board.game_description[-1],
+                                              anchor='w', tag='move{}'.format(self.move_counter),
+                                              font=('Arial bold', 12))
+            self.move_counter += 1
+        except IndexError:
+            if self.move_counter % 2 == 0 or self.move_counter == 1:
+                self.game_desc_window.create_text(10, 10,
+                                                  text='{}.'.format(self.move_counter // 3 + 1), anchor='w',
+                                                  tag='move{}'.format(self.move_counter), font=('Arial bold', 12))
+                self.move_counter += 1
+            self.game_desc_window.create_text(10 + self.move_counter * 15, 10,
+                                              text=self.game.board.game_description[-1],
+                                              anchor='w', tag='move{}'.format(self.move_counter),
+                                              font=('Arial bold', 12))
+            self.move_counter += 1
+        '''all_moves = self.game.board.game_description
+        move_text = all_moves[-1]
+        if move_text:
+            if len(all_moves) % 2 == 1:
+                text = str(len(all_moves) // 2 + 1) + '.'
+                previous_move = self.game_desc_window.find_withtag('move_desc')
+                if previous_move:
+                    prev_coords = self.game_desc_window.bbox(previous_move[0])
+                    self.game_desc_window.create_text(prev_coords[2], 10, text=text, font=('Arial bold', 12), anchor='w',
+                                                      tag='move_desc'.format(str(len(all_moves) // 2 + 1)))
+                    previous_move = self.game_desc_window.find_withtag('move_desc')
+                    prev_coords = self.game_desc_window.bbox(previous_move[0])
+                    self.game_desc_window.create_text(prev_coords[2] + 3, 10, text=move_text)
+            else:
+                self.game_desc_window.create_text(10, 10, text='1. ', font=('Arial bold', 12), anchor='w',
+                                                  tag='move_desc')'''
+
+        '''row = 0
+        move_num = 1
+        row_text = ''
+        for i in range(0, len(self.game.board.game_description)):
+            if i % 2 == 0:
+                row_text += str(move_num) + '. '
+                move_num += 1
+            row_text += self.game.board.game_description[i] + ' '
+            print(i)
+            if (i + 1) % 8 == 0:
+                self.game_desc_window.create_text(10, 10 + 10 * row, text=f'{row_text}', tag='game_desc',
+                                                  font=('Arial bold', 12), anchor='w')
+                row += 1
+                row_text = '''''
 
 
 '''board = Board(Tk())

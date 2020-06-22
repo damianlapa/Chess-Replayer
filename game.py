@@ -502,33 +502,33 @@ class NewGame:
                 return pawn_position, final_position, self.pieces.index(pawn)
 
             elif move_type == 'short castle':
-                rook = None
-                king = None
-                king_old_position = None
-                king_new_position = None
-                king_index = None
-                rook_old_position = None
-                rook_new_position = None
-                rook_index = None
+                short_rook = None
+                short_king = None
+                short_king_old_position = None
+                short_king_new_position = None
+                short_king_index = None
+                short_rook_old_position = None
+                short_rook_new_position = None
+                short_rook_index = None
                 for piece in self.pieces:
                     if color == 'white':
-                        if not rook:
-                            rook = piece if piece.position == 8 else None
-                            if rook:
-                                rook_old_position = piece.position
+                        if not short_rook:
+                            short_rook = piece if piece.position == 8 else None
+                            if short_rook:
+                                short_rook_old_position = piece.position
 
-                        if not king:
-                            king = piece if piece.position == 5 else None
+                        if not short_king:
+                            short_king = piece if piece.position == 5 else None
                             if king:
-                                king_old_position = piece.position
-                        if rook and king:
-                            rook.new_position(6)
-                            king.new_position(7)
-                            king_new_position = king.position
-                            rook_new_position = rook.position
-                            king_index = self.pieces.index(king)
-                            rook_index = self.pieces.index(rook)
-                            return king_old_position, king_new_position, king_index, rook_old_position, \
+                                short_king_old_position = piece.position
+                        if short_rook and short_king:
+                            short_rook.new_position(6)
+                            short_king.new_position(7)
+                            king_new_position = short_king.position
+                            rook_new_position = short_rook.position
+                            king_index = self.pieces.index(short_king)
+                            rook_index = self.pieces.index(short_rook)
+                            return short_king_old_position, king_new_position, king_index, short_rook_old_position, \
                                    rook_new_position, rook_index
                     else:
                         if not rook:
@@ -551,6 +551,7 @@ class NewGame:
 
             elif move_type == 'long castle':
                 king = None
+                rook = None
                 king_old_position = None
                 king_new_position = None
                 king_index = None
