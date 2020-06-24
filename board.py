@@ -1,7 +1,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
-from database import load_game_from_database, save_game_to_database, update_game
+from database import load_game_from_database, save_game_to_database, update_game, return_all_games
 
 white_pawn = ChessPiece('pawn', 9)
 white_pawn_2 = ChessPiece('pawn', 13)
@@ -29,6 +29,9 @@ class GameMenu:
         self.game_text_window = None
         self.two_players_button = None
         self.save_button = None
+        self.load_button = None
+        self.all_database_games = None
+        self.load_selected_game = None
         self.game_id = None
         self.run_game()
 
@@ -38,12 +41,50 @@ class GameMenu:
         self.main_canvas = Canvas(self.env, width=800, height=520)
         self.main_canvas.place(x=0, y=0)
         self.main_canvas.create_image(400, 260, image=self.bg_image)
+        '''self.load_exemplary_game_button = Button(self.env, text='Load Exemplary', command=self.load_exemplary_game)
+        self.load_exemplary_game_button.place(x=50, y=50)
+        self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
+        self.load_game_button.place(x=50, y=100)
+        self.two_players_button = Button(self.env, text='2 Players Game', command=self.two_players_game)
+        self.two_players_button.place(x=50, y=150)
+        self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
+        self.load_button.place(x=50, y=200)'''
+        self.set_buttons()
+
+    def set_buttons(self):
+        self.env.geometry('800x520')
+        self.env.configure(bg='black')
+        self.main_canvas.place(x=0, y=0)
+        if self.load_selected_game:
+            print('yes')
+            self.load_selected_game.place_forget()
+        if self.game_text_window:
+            self.game_text_window.place_forget()
+        if self.all_database_games:
+            self.all_database_games.place_forget()
         self.load_exemplary_game_button = Button(self.env, text='Load Exemplary', command=self.load_exemplary_game)
         self.load_exemplary_game_button.place(x=50, y=50)
         self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
         self.load_game_button.place(x=50, y=100)
         self.two_players_button = Button(self.env, text='2 Players Game', command=self.two_players_game)
         self.two_players_button.place(x=50, y=150)
+        self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
+        self.load_button.place(x=50, y=200)
+
+    def load_database_game(self):
+        database_game = StringVar(self.env)
+        games = return_all_games()
+        print(games)
+        self.all_database_games = OptionMenu(self.env, database_game, *games)
+        self.all_database_games.place(x=300, y=10)
+
+        def get_value():
+            print(database_game.get())
+            self.game = NewGame(database_game.get())
+            self.load_game()
+
+        self.load_selected_game = Button(self.env, text='LOAD', command=get_value)
+        self.load_selected_game.place(x=375, y=10)
 
     def two_players_game(self):
         self.main_canvas.place_forget()
@@ -62,7 +103,7 @@ class GameMenu:
     def display_text_window(self):
         if not self.game_text_window:
             self.game_text_window = Text(self.main_canvas, height=27, width=67)
-            self.game_text_window.place(x=250, y=10)
+        self.game_text_window.place(x=250, y=10)
         self.read_text_button = Button(self.main_canvas, text='Load Game', command=self.load_pasted_game)
         self.read_text_button.place(x=465, y=480)
 
@@ -115,10 +156,12 @@ class GameMenu:
         self.game = None
         self.game_frame.place_forget()
         self.return_button.place_forget()
-        self.env.geometry('800x520')
+        '''self.env.geometry('800x520')
         self.main_canvas.place(x=0, y=0)
         self.load_exemplary_game_button.place(x=50, y=50)
-        self.load_game_button.place(x=50, y=100)
+        self.load_game_button.place(x=50, y=100)'''
+        self.set_buttons()
+        self.game_id = None
 
     def run_game(self):
         self.main_menu()
@@ -325,6 +368,7 @@ class Board:
                                            tag='game_finished')
         else:
             a, b, c = self.game.move(self.counter)
+            print(a, b, c)
             self.move_piece(a, b, c)
             if self.game.game_moves[self.counter][-1] in ('+', '#'):
                 color = 'black' if self.counter % 2 == 0 else 'white'

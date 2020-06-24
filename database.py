@@ -67,3 +67,21 @@ def update_game(game_id, game):
     except OperationalError:
         pass
     cnx.close()
+
+
+def return_all_games():
+    all_games = []
+    cnx = connect_to_database()
+    sql = '''
+    SELECT game_pgn from games'''
+    try:
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        cnx.commit()
+        for game in cursor:
+            all_games.append(game[0])
+        cursor.close()
+    except OperationalError:
+        pass
+    cnx.close()
+    return all_games
