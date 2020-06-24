@@ -1,5 +1,6 @@
 import re
 from PIL import Image, ImageTk
+from database import save_game_to_database
 
 alphabet = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 
@@ -796,8 +797,8 @@ class ChessBoard:
 
         self.capture_marker = None
 
-        if len(self.game_description) > 1:
-            print(self.create_pgn())
+        '''if len(self.game_description) > 10:
+            save_game_to_database(self.create_pgn())'''
 
     def chess_piece_capture(self, piece, new_position):
         self.capture_marker = True

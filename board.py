@@ -1,6 +1,7 @@
 from tkinter import *
 from PIL import Image, ImageTk
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
+from database import load_game_from_database, save_game_to_database, update_game
 
 white_pawn = ChessPiece('pawn', 9)
 white_pawn_2 = ChessPiece('pawn', 13)
@@ -27,6 +28,8 @@ class GameMenu:
         self.game_frame = None
         self.game_text_window = None
         self.two_players_button = None
+        self.save_button = None
+        self.game_id = None
         self.run_game()
 
     def main_menu(self):
@@ -52,6 +55,8 @@ class GameMenu:
         self.return_button.place(x=1510, y=25)
         self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
+        self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
+        self.save_button.place(x=1175, y=650)
         self.game = Board(self.game_frame, TwoPlayersGame(), '2')
 
     def display_text_window(self):
@@ -90,7 +95,7 @@ class GameMenu:
         37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
         '''
         test_2 = '1. e4 e5 2. d4 d5 3. exd5 exd4 4. Qe2+ Qe7 5. Nc3 Qxe2+ 6. Bxe2 dxc3 7. bxc3'
-        self.game = NewGame(test_2)
+        self.game = NewGame(test_game)
         self.load_game()
 
     def load_game(self):
@@ -118,6 +123,19 @@ class GameMenu:
     def run_game(self):
         self.main_menu()
         self.env.mainloop()
+
+    def save(self):
+        if not self.game_id:
+            self.game_id = save_game_to_database(self.game.game.board.create_pgn())
+            statement = Label(self.game_frame, text='GAME SAVED', fg='green', bg='black')
+            statement.place(x=1175, y=625)
+            self.game_frame.after(2000, statement.destroy)
+        else:
+            update_game(self.game_id, self.game.game.board.create_pgn())
+            statement = Label(self.game_frame, text='GAME UPDATED', fg='green', bg='black')
+            statement.place(x=1175, y=625)
+            self.game_frame.after(2000, statement.destroy)
+        print(self.game_id)
 
 
 class Board:
