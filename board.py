@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter.ttk import Combobox
 from PIL import Image, ImageTk
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
 from database import load_game_from_database, save_game_to_database, update_game, return_all_games
@@ -74,17 +75,17 @@ class GameMenu:
     def load_database_game(self):
         database_game = StringVar(self.env)
         games = return_all_games()
-        print(games)
-        self.all_database_games = OptionMenu(self.env, database_game, *games)
-        self.all_database_games.place(x=300, y=10)
+        self.all_database_games = Combobox(self.env, textvariable=database_game, values=games, state='readonly',
+                                           width=50)
+        self.all_database_games.place(x=300, y=40)
 
         def get_value():
             print(database_game.get())
             self.game = NewGame(database_game.get())
             self.load_game()
 
-        self.load_selected_game = Button(self.env, text='LOAD', command=get_value)
-        self.load_selected_game.place(x=375, y=10)
+        self.load_selected_game = Button(self.env, text='LOAD', command=get_value, bg='darkgreen', fg='white')
+        self.load_selected_game.place(x=300, y=10)
 
     def two_players_game(self):
         self.main_canvas.place_forget()
@@ -333,6 +334,7 @@ class Board:
         self.temp_situation()
 
     def piece_move(self):
+        print(self.counter, 'to jest wartosc')
         current_move = self.game_desc_window.find_withtag('current_move')
         if current_move:
             self.game_desc_window.delete(current_move)
@@ -694,7 +696,6 @@ class Board:
             if points:
                 for point in points:
                     self.board.delete(point)
-
 
     def promotion_board_pick(self):
 
