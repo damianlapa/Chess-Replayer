@@ -1,5 +1,7 @@
 import re
 from PIL import Image, ImageTk
+import asyncio
+import websockets
 from database import save_game_to_database
 
 alphabet = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
@@ -1278,6 +1280,21 @@ class TwoPlayersGame:
             self.white_move()
         else:
             self.black_move()
+
+    def online_game(self):
+        def xxx():
+            async def update():
+                uri = "ws://localhost:8765"
+                async with websockets.connect(uri) as websocket:
+                    await websocket.send('ready')
+                    all_rectangles = await websocket.recv()
+                    print(all_rectangles)
+                    c = all_rectangles
+                    return c
+
+            k = asyncio.get_event_loop().run_until_complete(update())
+
+            return k
 
 
 test_game = '''

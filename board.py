@@ -1,6 +1,9 @@
 from tkinter import *
 from tkinter.ttk import Combobox
 from PIL import Image, ImageTk
+import websockets
+import asyncio
+import json
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
 from database import load_game_from_database, save_game_to_database, update_game, return_all_games
 
@@ -29,6 +32,7 @@ class GameMenu:
         self.game_frame = None
         self.game_text_window = None
         self.two_players_button = None
+        self.two_players_online_button = None
         self.save_button = None
         self.load_button = None
         self.all_database_games = None
@@ -59,10 +63,12 @@ class GameMenu:
         self.load_exemplary_game_button.place(x=50, y=50)
         self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
         self.load_game_button.place(x=50, y=100)
-        self.two_players_button = Button(self.env, text='2 Players Game', command=self.two_players_game)
+        self.two_players_button = Button(self.env, text='2 Players Offline Game', command=self.two_players_game)
         self.two_players_button.place(x=50, y=150)
+        self.two_players_button = Button(self.env, text='2 Players Online Game', command=self.two_players_game)
+        self.two_players_button.place(x=50, y=200)
         self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
-        self.load_button.place(x=50, y=200)
+        self.load_button.place(x=50, y=250)
 
     def load_database_game(self):
         database_game = StringVar(self.env)
@@ -91,7 +97,7 @@ class GameMenu:
         self.game_frame.place(x=0, y=0)
         self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
         self.save_button.place(x=1165, y=625)
-        self.game = Board(self.game_frame, TwoPlayersGame(), '2')
+        self.game = Board(self.game_frame, TwoPlayersGame(), '3')
 
     def display_text_window(self):
         if not self.game_text_window:
@@ -158,7 +164,7 @@ class GameMenu:
 
     def run_game(self):
         self.main_menu()
-        self.env.mainloop()
+        # self.env.mainloop()
 
     def save(self):
         if not self.game_id:
@@ -194,9 +200,12 @@ class Board:
         self.possible_promotions = []
         self.promotion_data = None
         self.move_counter = 0
+        self.online_game_data = []
         if self.mode == '1':
             self.game_description()
             self.display()
+        elif self.mode == '2':
+            self.display_two_players_game()
         else:
             self.display_two_players_game()
 
@@ -326,7 +335,6 @@ class Board:
         self.temp_situation()
 
     def piece_move(self):
-        print(self.counter, 'to jest wartosc')
         current_move = self.game_desc_window.find_withtag('current_move')
         if current_move:
             self.game_desc_window.delete(current_move)
@@ -362,7 +370,6 @@ class Board:
                                            tag='game_finished')
         else:
             a, b, c = self.game.move(self.counter)
-            print(a, b, c)
             self.move_piece(a, b, c)
             if self.game.game_moves[self.counter][-1] in ('+', '#'):
                 color = 'black' if self.counter % 2 == 0 else 'white'
@@ -418,7 +425,7 @@ class Board:
         self.board.bind('<3>', self.right_click)
         self.board.bind('<Right>', self.left_click)
         self.board.bind('<Left>', self.right_click)
-        self.env.mainloop()
+        # self.env.mainloop()
 
     def quit(self):
         self.env.quit()
@@ -432,6 +439,8 @@ class Board:
             self.board.create_image(piece_x, piece_y, image=piece_image,
                                     tags=(f'{piece.piece_notation_position()}', f'{piece.color}', f'{piece.piece_type}',
                                           'piece'))
+
+        self.online_move_listener()
 
         self.board.bind('<1>', self.pick_a_piece)
         self.board.bind('<B1-Motion>', self.piece_move_game)
@@ -633,6 +642,7 @@ class Board:
                                 self.board.delete(self.board.find_withtag(new_field_description)[0])
                                 self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field),
                                                                     new_field)
+                                self.send_move_to_server(old_field, new_field, 'c')
                                 self.tour += 1
                             else:
                                 old_field_coords = self.create_coords(old_field)
@@ -641,6 +651,7 @@ class Board:
                         else:
                             self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field),
                                                              new_field)
+                            self.send_move_to_server(old_field, new_field)
                             self.tour += 1
                         if not error:
                             new_tags = new_field_description
@@ -823,8 +834,75 @@ class Board:
                 row += 1
                 row_text = '''''
 
+    def online_move_listener(self):
+        def receive_data():
+            async def send_move():
+                uri = "ws://localhost:8765"
+                async with websockets.connect(uri) as websocket:
+                    await websocket.send('ready')
+                    all_moves = await websocket.recv()
+                    return all_moves
 
-'''board = Board(Tk())
-board.display()'''
+            all_moves_data = asyncio.get_event_loop().run_until_complete(send_move())
+            return all_moves_data
+        server_game_moves = json.loads(receive_data())
+        for move in server_game_moves:
+            old_field, new_field, move_type = move
+            if move not in self.online_game_data:
+                self.tour += 1
+                if move_type:
+                    self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
+                else:
+                    self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
 
-game = GameMenu(Tk())
+                self.board.bind('<1>', self.pick_a_piece)
+                self.board.bind('<B1-Motion>', self.piece_move_game)
+                self.board.bind('<ButtonRelease-1>', self.piece_new_place)
+
+            self.online_game_data.append(move)
+            self.opponent_move(old_field, new_field, move_type)
+        self.board.after(1000, self.online_move_listener)
+
+    def send_move_to_server(self, old_position, new_position, extra_info=None):
+        async def send_move():
+            uri = "ws://localhost:8765"
+            async with websockets.connect(uri) as websocket:
+                move = [old_position, new_position, extra_info]
+                self.online_game_data.append(move)
+                move_json = json.dumps(move)
+                await websocket.send(move_json)
+
+        asyncio.get_event_loop().run_until_complete(send_move())
+
+        self.board.unbind('<1>')
+        self.board.unbind('<B1-Motion>')
+        self.board.unbind('<ButtonRelease-1>')
+
+    def opponent_move(self, old_field, new_field, move_type):
+        moved_piece = self.board.find_withtag(self.decode_position_number(old_field))
+        if moved_piece:
+            try:
+                if move_type:
+                    self.board.delete(self.board.find_withtag(self.decode_position_number(new_field)))
+                piece_tags = self.board.itemcget(moved_piece, 'tags')
+                old_tags = piece_tags.split()
+                old_field = self.change_field_description_to_number(old_tags[0])
+
+                moved_piece_object = self.game.board.find_piece_by_position(new_field)
+                self.game.board.piece_current_moves(moved_piece_object)
+                new_coords = self.create_coords(new_field)
+                self.board.coords(moved_piece, new_coords[0], new_coords[1])
+                new_field_description = self.decode_position_number(new_field)
+
+                new_tags = new_field_description
+                for i in range(1, len(old_tags)):
+                    new_tags += ' ' + old_tags[i]
+                self.board.itemconfig(moved_piece, tags=new_tags)
+
+            except IndexError:
+                print('error')
+
+if __name__ == '__main__':
+    env = Tk()
+    game = GameMenu(env)
+    env.mainloop()
