@@ -544,6 +544,10 @@ class Board:
         castle_rook = None
         rook_new_field = 0
         rook_old_field = 0
+        moved_piece_object = None
+        old_field = None
+        new_field = None
+
 
         def castle(king, rook, king_position, rook_position):
 
@@ -885,13 +889,11 @@ class Board:
         server_game_moves = json.loads(receive_data())
         for move in server_game_moves:
             old_field, new_field, move_type = move
-            print(move)
             if move not in self.online_game_data:
                 self.tour += 1
                 if move_type == 'c':
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
                 elif move_type == 'castle':
-                    print(self.game.board.find_piece_by_position(old_field))
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
                 else:
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
@@ -916,9 +918,9 @@ class Board:
 
         asyncio.get_event_loop().run_until_complete(send_move())
 
-        '''self.board.unbind('<1>')
+        self.board.unbind('<1>')
         self.board.unbind('<B1-Motion>')
-        self.board.unbind('<ButtonRelease-1>')'''
+        self.board.unbind('<ButtonRelease-1>')
 
     def opponent_move(self, old_field, new_field, move_type):
         moved_piece = self.board.find_withtag(self.decode_position_number(old_field))

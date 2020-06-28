@@ -13,7 +13,6 @@ try:
             if move != 'ready':
                 all_moves.append(json.loads(move))
             json.dumps(all_moves)
-            print(all_moves)
             await websocket.send(json.dumps(all_moves))
             await asyncio.sleep(random.random() * 3)
 
