@@ -201,7 +201,7 @@ class Board:
         self.promotion_data = None
         self.move_counter = 0
         self.online_game_data = []
-        self.ip_address = '91.205.75.161'
+        self.ip_address = 'localhost'
         if self.mode == '1':
             self.game_description()
             self.display()
@@ -516,8 +516,14 @@ class Board:
     def piece_new_place(self, event):
         castle_rook = None
         rook_new_field = 0
+        rook_old_field = 0
 
         def castle(king, rook, king_position, rook_position):
+
+            self.send_move_to_server(king.position, king_position, 'castle')
+            self.send_move_to_server(rook.position, rook_position, 'castle')
+
+            rook_old_field = rook_position
             king_coords = self.create_coords(king_position)
             rook_coords = self.create_coords(rook_position)
             king_on_board = self.board.find_withtag(self.decode_position_number(king.position))[0]
@@ -593,6 +599,9 @@ class Board:
             # castle
             if special_move:
                 castle(moved_piece_object, castle_rook, new_field, rook_new_field)
+
+
+
             else:
                 # checking check threat ends
                 check_end = True
@@ -849,10 +858,14 @@ class Board:
         server_game_moves = json.loads(receive_data())
         for move in server_game_moves:
             old_field, new_field, move_type = move
+            print(move)
             if move not in self.online_game_data:
                 self.tour += 1
-                if move_type:
+                if move_type == 'c':
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
+                elif move_type == 'castle':
+                    print(self.game.board.find_piece_by_position(old_field))
+                    self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
                 else:
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
 
@@ -860,8 +873,9 @@ class Board:
                 self.board.bind('<B1-Motion>', self.piece_move_game)
                 self.board.bind('<ButtonRelease-1>', self.piece_new_place)
 
-            self.online_game_data.append(move)
-            self.opponent_move(old_field, new_field, move_type)
+                self.online_game_data.append(move)
+                self.opponent_move(old_field, new_field, move_type)
+
         self.board.after(1000, self.online_move_listener)
 
     def send_move_to_server(self, old_position, new_position, extra_info=None):
@@ -875,9 +889,9 @@ class Board:
 
         asyncio.get_event_loop().run_until_complete(send_move())
 
-        self.board.unbind('<1>')
+        '''self.board.unbind('<1>')
         self.board.unbind('<B1-Motion>')
-        self.board.unbind('<ButtonRelease-1>')
+        self.board.unbind('<ButtonRelease-1>')'''
 
     def opponent_move(self, old_field, new_field, move_type):
         moved_piece = self.board.find_withtag(self.decode_position_number(old_field))
