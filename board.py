@@ -1,6 +1,8 @@
 from tkinter import *
+from tkinter.ttk import Combobox
 from PIL import Image, ImageTk
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
+from database import load_game_from_database, save_game_to_database, update_game, return_all_games
 
 white_pawn = ChessPiece('pawn', 9)
 white_pawn_2 = ChessPiece('pawn', 13)
@@ -27,6 +29,11 @@ class GameMenu:
         self.game_frame = None
         self.game_text_window = None
         self.two_players_button = None
+        self.save_button = None
+        self.load_button = None
+        self.all_database_games = None
+        self.load_selected_game = None
+        self.game_id = None
         self.run_game()
 
     def main_menu(self):
@@ -35,29 +42,61 @@ class GameMenu:
         self.main_canvas = Canvas(self.env, width=800, height=520)
         self.main_canvas.place(x=0, y=0)
         self.main_canvas.create_image(400, 260, image=self.bg_image)
+        self.set_buttons()
+
+    def set_buttons(self):
+        self.env.geometry('800x520')
+        self.env.configure(bg='black')
+        self.main_canvas.place(x=0, y=0)
+        if self.load_selected_game:
+            print('yes')
+            self.load_selected_game.place_forget()
+        if self.game_text_window:
+            self.game_text_window.place_forget()
+        if self.all_database_games:
+            self.all_database_games.place_forget()
         self.load_exemplary_game_button = Button(self.env, text='Load Exemplary', command=self.load_exemplary_game)
         self.load_exemplary_game_button.place(x=50, y=50)
         self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
         self.load_game_button.place(x=50, y=100)
         self.two_players_button = Button(self.env, text='2 Players Game', command=self.two_players_game)
         self.two_players_button.place(x=50, y=150)
+        self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
+        self.load_button.place(x=50, y=200)
+
+    def load_database_game(self):
+        database_game = StringVar(self.env)
+        games = return_all_games()
+        self.all_database_games = Combobox(self.env, textvariable=database_game, values=games, state='readonly',
+                                           width=50)
+        self.all_database_games.place(x=300, y=40)
+
+        def get_value():
+            print(database_game.get())
+            self.game = NewGame(database_game.get())
+            self.load_game()
+
+        self.load_selected_game = Button(self.env, text='LOAD', command=get_value, bg='darkgreen', fg='white')
+        self.load_selected_game.place(x=300, y=10)
 
     def two_players_game(self):
         self.main_canvas.place_forget()
         self.load_exemplary_game_button.place_forget()
         self.load_game_button.place_forget()
-        self.env.geometry('1550x1000')
+        self.env.geometry('1425x1000')
         self.env.configure(bg='black')
         self.return_button = Button(self.env, text='X', command=self.return_to_menu)
-        self.return_button.place(x=1510, y=25)
-        self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
+        self.return_button.place(x=1385, y=25)
+        self.game_frame = Frame(self.env, width=1375, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
+        self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
+        self.save_button.place(x=1165, y=625)
         self.game = Board(self.game_frame, TwoPlayersGame(), '2')
 
     def display_text_window(self):
         if not self.game_text_window:
             self.game_text_window = Text(self.main_canvas, height=27, width=67)
-            self.game_text_window.place(x=250, y=10)
+        self.game_text_window.place(x=250, y=10)
         self.read_text_button = Button(self.main_canvas, text='Load Game', command=self.load_pasted_game)
         self.read_text_button.place(x=465, y=480)
 
@@ -90,7 +129,7 @@ class GameMenu:
         37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
         '''
         test_2 = '1. e4 e5 2. d4 d5 3. exd5 exd4 4. Qe2+ Qe7 5. Nc3 Qxe2+ 6. Bxe2 dxc3 7. bxc3'
-        self.game = NewGame(test_2)
+        self.game = NewGame(test_game)
         self.load_game()
 
     def load_game(self):
@@ -110,14 +149,29 @@ class GameMenu:
         self.game = None
         self.game_frame.place_forget()
         self.return_button.place_forget()
-        self.env.geometry('800x520')
+        '''self.env.geometry('800x520')
         self.main_canvas.place(x=0, y=0)
         self.load_exemplary_game_button.place(x=50, y=50)
-        self.load_game_button.place(x=50, y=100)
+        self.load_game_button.place(x=50, y=100)'''
+        self.set_buttons()
+        self.game_id = None
 
     def run_game(self):
         self.main_menu()
         self.env.mainloop()
+
+    def save(self):
+        if not self.game_id:
+            self.game_id = save_game_to_database(self.game.game.board.create_pgn())
+            statement = Label(self.game_frame, text='GAME SAVED', fg='green', bg='black')
+            statement.place(x=1175, y=625)
+            self.game_frame.after(2000, statement.destroy)
+        else:
+            update_game(self.game_id, self.game.game.board.create_pgn())
+            statement = Label(self.game_frame, text='GAME UPDATED', fg='green', bg='black')
+            statement.place(x=1175, y=625)
+            self.game_frame.after(2000, statement.destroy)
+        print(self.game_id)
 
 
 class Board:
@@ -272,6 +326,7 @@ class Board:
         self.temp_situation()
 
     def piece_move(self):
+        print(self.counter, 'to jest wartosc')
         current_move = self.game_desc_window.find_withtag('current_move')
         if current_move:
             self.game_desc_window.delete(current_move)
@@ -307,6 +362,7 @@ class Board:
                                            tag='game_finished')
         else:
             a, b, c = self.game.move(self.counter)
+            print(a, b, c)
             self.move_piece(a, b, c)
             if self.game.game_moves[self.counter][-1] in ('+', '#'):
                 color = 'black' if self.counter % 2 == 0 else 'white'
@@ -632,7 +688,6 @@ class Board:
             if points:
                 for point in points:
                     self.board.delete(point)
-
 
     def promotion_board_pick(self):
 

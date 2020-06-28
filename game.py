@@ -1,5 +1,6 @@
 import re
 from PIL import Image, ImageTk
+from database import save_game_to_database
 
 alphabet = ('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h')
 
@@ -449,6 +450,7 @@ class NewGame:
                         return 'pos2'
         else:
             if move_type == 'pawn':
+                print('pawn move', color, num)
                 final_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][0]) + 1
                 for piece in self.pieces:
                     if piece.piece_type == 'pawn':
@@ -467,18 +469,19 @@ class NewGame:
                                     self.pieces.append(piece)
                                     return old_position, piece.position, self.pieces.index(piece)
                         else:
-                            if piece.position == final_position + 8:
-                                old_position = piece.position
-                                self.pieces.remove(piece)
-                                piece.new_position(final_position)
-                                self.pieces.append(piece)
-                                return old_position, piece.position, self.pieces.index(piece)
-                            elif piece.position == final_position + 16:
-                                old_position = piece.position
-                                self.pieces.remove(piece)
-                                piece.new_position(final_position)
-                                self.pieces.append(piece)
-                                return old_position, piece.position, self.pieces.index(piece)
+                            if piece.color == color:
+                                if piece.position == final_position + 8:
+                                    old_position = piece.position
+                                    self.pieces.remove(piece)
+                                    piece.new_position(final_position)
+                                    self.pieces.append(piece)
+                                    return old_position, piece.position, self.pieces.index(piece)
+                                elif piece.position == final_position + 16:
+                                    old_position = piece.position
+                                    self.pieces.remove(piece)
+                                    piece.new_position(final_position)
+                                    self.pieces.append(piece)
+                                    return old_position, piece.position, self.pieces.index(piece)
             elif move_type == 'pawn capture':
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
                 pawn_horizontal_position = alphabet.index(self.game_moves[num][0])
@@ -796,8 +799,8 @@ class ChessBoard:
 
         self.capture_marker = None
 
-        if len(self.game_description) > 1:
-            print(self.create_pgn())
+        '''if len(self.game_description) > 10:
+            save_game_to_database(self.create_pgn())'''
 
     def chess_piece_capture(self, piece, new_position):
         self.capture_marker = True
