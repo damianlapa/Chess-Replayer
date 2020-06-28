@@ -1,4 +1,17 @@
 .idea/*
+counter_app.py
+counter_app_2.py
+game_server.py
+main.py
+resize_tests.py
+serv_test.html
+server.py
+server_client.py
+serverc.py
+sync_server.py
+thread_test.py
+ws_client_tkinter.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

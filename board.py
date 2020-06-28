@@ -42,14 +42,6 @@ class GameMenu:
         self.main_canvas = Canvas(self.env, width=800, height=520)
         self.main_canvas.place(x=0, y=0)
         self.main_canvas.create_image(400, 260, image=self.bg_image)
-        '''self.load_exemplary_game_button = Button(self.env, text='Load Exemplary', command=self.load_exemplary_game)
-        self.load_exemplary_game_button.place(x=50, y=50)
-        self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
-        self.load_game_button.place(x=50, y=100)
-        self.two_players_button = Button(self.env, text='2 Players Game', command=self.two_players_game)
-        self.two_players_button.place(x=50, y=150)
-        self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
-        self.load_button.place(x=50, y=200)'''
         self.set_buttons()
 
     def set_buttons(self):
@@ -91,14 +83,14 @@ class GameMenu:
         self.main_canvas.place_forget()
         self.load_exemplary_game_button.place_forget()
         self.load_game_button.place_forget()
-        self.env.geometry('1550x1000')
+        self.env.geometry('1425x1000')
         self.env.configure(bg='black')
         self.return_button = Button(self.env, text='X', command=self.return_to_menu)
-        self.return_button.place(x=1510, y=25)
-        self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
+        self.return_button.place(x=1385, y=25)
+        self.game_frame = Frame(self.env, width=1375, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
         self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
-        self.save_button.place(x=1175, y=650)
+        self.save_button.place(x=1165, y=625)
         self.game = Board(self.game_frame, TwoPlayersGame(), '2')
 
     def display_text_window(self):
