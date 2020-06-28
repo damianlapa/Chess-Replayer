@@ -38,6 +38,8 @@ class GameMenu:
         self.all_database_games = None
         self.load_selected_game = None
         self.game_id = None
+        self.server_connection = None
+        self.ip_entry = None
         self.run_game()
 
     def main_menu(self):
@@ -53,7 +55,6 @@ class GameMenu:
         self.env.configure(bg='black')
         self.main_canvas.place(x=0, y=0)
         if self.load_selected_game:
-            print('yes')
             self.load_selected_game.place_forget()
         if self.game_text_window:
             self.game_text_window.place_forget()
@@ -65,10 +66,36 @@ class GameMenu:
         self.load_game_button.place(x=50, y=100)
         self.two_players_button = Button(self.env, text='2 Players Offline Game', command=self.two_players_game)
         self.two_players_button.place(x=50, y=150)
-        self.two_players_button = Button(self.env, text='2 Players Online Game', command=self.two_players_game)
+        self.two_players_button = Button(self.env, text='2 Players Online Game', command=self.set_ip_address)
         self.two_players_button.place(x=50, y=200)
         self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
         self.load_button.place(x=50, y=250)
+
+    def set_ip_address(self):
+        self.server_connection = Frame(self.env, width=220, height=150, bg='black')
+        self.server_connection.place(x=275, y=150)
+        ip_text = Label(self.server_connection, text='Enter an IP server address:', bg='black', fg='white')
+        ip_text.place(x=5, y=10)
+        self.ip_entry = Entry(self.server_connection, width=25)
+        self.ip_entry.place(x=5, y=55)
+
+        def get_an_address():
+            try:
+                async def ready():
+                    uri = "ws://{}:8765".format(self.ip_entry.get())
+                    async with websockets.connect(uri) as websocket:
+                        await websocket.send('ready')
+                        pass
+                response = asyncio.get_event_loop().run_until_complete(ready())
+                self.two_players_game(self.ip_entry.get())
+            except Exception as e:
+                statement = Label(self.server_connection, text='Connection Failed!', fg='red', bg='black')
+                statement.place(x=44, y=122)
+                self.server_connection.after(2000, statement.destroy)
+
+
+        connect_button = Button(self.server_connection, text='CONNECT', command=get_an_address)
+        connect_button.place(x=66, y=88)
 
     def load_database_game(self):
         database_game = StringVar(self.env)
@@ -85,7 +112,7 @@ class GameMenu:
         self.load_selected_game = Button(self.env, text='LOAD', command=get_value, bg='darkgreen', fg='white')
         self.load_selected_game.place(x=300, y=10)
 
-    def two_players_game(self):
+    def two_players_game(self, ip):
         self.main_canvas.place_forget()
         self.load_exemplary_game_button.place_forget()
         self.load_game_button.place_forget()
@@ -97,7 +124,7 @@ class GameMenu:
         self.game_frame.place(x=0, y=0)
         self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
         self.save_button.place(x=1165, y=625)
-        self.game = Board(self.game_frame, TwoPlayersGame(), '3')
+        self.game = Board(self.game_frame, TwoPlayersGame(), '3', ip)
 
     def display_text_window(self):
         if not self.game_text_window:
@@ -181,7 +208,7 @@ class GameMenu:
 
 
 class Board:
-    def __init__(self, env, game_, mode):
+    def __init__(self, env, game_, mode, ip):
         self.env = env
         self.game = game_
         self.board = None
@@ -201,7 +228,7 @@ class Board:
         self.promotion_data = None
         self.move_counter = 0
         self.online_game_data = []
-        self.ip_address = 'localhost'
+        self.ip_address = ip
         if self.mode == '1':
             self.game_description()
             self.display()
