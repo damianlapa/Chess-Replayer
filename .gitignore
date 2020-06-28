@@ -1,7 +1,6 @@
 .idea/*
 counter_app.py
 counter_app_2.py
-game_server.py
 main.py
 resize_tests.py
 serv_test.html
