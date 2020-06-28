@@ -201,6 +201,7 @@ class Board:
         self.promotion_data = None
         self.move_counter = 0
         self.online_game_data = []
+        self.ip_address = '91.205.75.161'
         if self.mode == '1':
             self.game_description()
             self.display()
@@ -837,7 +838,7 @@ class Board:
     def online_move_listener(self):
         def receive_data():
             async def send_move():
-                uri = "ws://localhost:8765"
+                uri = "ws://{}:8765".format(self.ip_address)
                 async with websockets.connect(uri) as websocket:
                     await websocket.send('ready')
                     all_moves = await websocket.recv()
@@ -865,7 +866,7 @@ class Board:
 
     def send_move_to_server(self, old_position, new_position, extra_info=None):
         async def send_move():
-            uri = "ws://localhost:8765"
+            uri = "ws://{}:8765".format(self.ip_address)
             async with websockets.connect(uri) as websocket:
                 move = [old_position, new_position, extra_info]
                 self.online_game_data.append(move)
