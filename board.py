@@ -40,7 +40,7 @@ class GameMenu:
         self.game_id = None
         self.server_connection = None
         self.ip_entry = None
-        self.run_game()
+        self.main_menu()
 
     def main_menu(self):
         self.env.geometry('800x520')
@@ -176,7 +176,7 @@ class GameMenu:
         self.game_frame = Frame(self.env, width=1500, height=1000, bg='black')
         self.game_frame.place(x=0, y=0)
         self.game_board = Board(self.game_frame, self.game, '1')
-        self.run_game()
+        # self.run_game()
 
     def return_to_menu(self):
         self.game = None
@@ -190,8 +190,7 @@ class GameMenu:
         self.game_id = None
 
     def run_game(self):
-        self.main_menu()
-        # self.env.mainloop()
+        self.load_game()
 
     def save(self):
         if not self.game_id:
@@ -208,7 +207,7 @@ class GameMenu:
 
 
 class Board:
-    def __init__(self, env, game_, mode, ip):
+    def __init__(self, env, game_, mode, ip=None):
         self.env = env
         self.game = game_
         self.board = None

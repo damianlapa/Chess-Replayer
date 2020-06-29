@@ -451,8 +451,9 @@ class NewGame:
                     elif move_type == 'pos2':
                         return 'pos2'
         else:
+            king = None
+            rook = None
             if move_type == 'pawn':
-                print('pawn move', color, num)
                 final_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][0]) + 1
                 for piece in self.pieces:
                     if piece.piece_type == 'pawn':
@@ -507,33 +508,29 @@ class NewGame:
                 return pawn_position, final_position, self.pieces.index(pawn)
 
             elif move_type == 'short castle':
-                short_rook = None
-                short_king = None
-                short_king_old_position = None
-                short_king_new_position = None
-                short_king_index = None
-                short_rook_old_position = None
-                short_rook_new_position = None
-                short_rook_index = None
+                print('gotcha')
+                king_old_position = None
+                rook_old_position = None
                 for piece in self.pieces:
                     if color == 'white':
-                        if not short_rook:
-                            short_rook = piece if piece.position == 8 else None
-                            if short_rook:
-                                short_rook_old_position = piece.position
+                        if not rook:
+                            rook = piece if piece.position == 8 else None
+                            if rook:
+                                rook_old_position = piece.position
 
-                        if not short_king:
-                            short_king = piece if piece.position == 5 else None
+                        if not king:
+                            king = piece if piece.position == 5 else None
                             if king:
-                                short_king_old_position = piece.position
-                        if short_rook and short_king:
-                            short_rook.new_position(6)
-                            short_king.new_position(7)
-                            king_new_position = short_king.position
-                            rook_new_position = short_rook.position
-                            king_index = self.pieces.index(short_king)
-                            rook_index = self.pieces.index(short_rook)
-                            return short_king_old_position, king_new_position, king_index, short_rook_old_position, \
+                                king_old_position = piece.position
+                                print()
+                        if rook and king:
+                            rook.new_position(6)
+                            king.new_position(7)
+                            king_new_position = king.position
+                            rook_new_position = rook.position
+                            king_index = self.pieces.index(king)
+                            rook_index = self.pieces.index(rook)
+                            return king_old_position, king_new_position, king_index, rook_old_position, \
                                    rook_new_position, rook_index
                     else:
                         if not rook:
@@ -723,7 +720,7 @@ class ChessBoard:
         elif piece.piece_type == 'pawn':
             if abs(piece.position - new_position) == 16:
                 self.en_passant = (
-                True, new_position, piece.color, new_position + (8 if piece.color == 'black' else -8))
+                    True, new_position, piece.color, new_position + (8 if piece.color == 'black' else -8))
 
             if self.en_passant_capture:
                 deleted_piece = self.find_piece_by_position(new_position + (8 if piece.color == 'black' else - 8))
@@ -1205,7 +1202,6 @@ class ChessBoard:
             else:
                 pgn_text += str(self.game_description[num]) + ' '
         return pgn_text
-
 
 
 class TwoPlayersGame:
