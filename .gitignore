@@ -11,6 +11,7 @@ sync_server.py
 thread_test.py
 ws_client_tkinter.py
 board2.py
+board3.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

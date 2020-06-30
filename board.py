@@ -66,8 +66,8 @@ class GameMenu:
         self.load_game_button.place(x=50, y=100)
         self.two_players_button = Button(self.env, text='2 Players Offline Game', command=self.two_players_game)
         self.two_players_button.place(x=50, y=150)
-        self.two_players_button = Button(self.env, text='2 Players Online Game', command=self.set_ip_address)
-        self.two_players_button.place(x=50, y=200)
+        self.two_players_online_button = Button(self.env, text='2 Players Online Game', command=self.set_ip_address)
+        self.two_players_online_button.place(x=50, y=200)
         self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
         self.load_button.place(x=50, y=250)
 
@@ -78,6 +78,7 @@ class GameMenu:
         ip_text.place(x=5, y=10)
         self.ip_entry = Entry(self.server_connection, width=25)
         self.ip_entry.place(x=5, y=55)
+        self.ip_entry.insert(0, 'localhost')
 
         def get_an_address():
             try:
@@ -87,8 +88,9 @@ class GameMenu:
                         await websocket.send('ready')
                         pass
                 response = asyncio.get_event_loop().run_until_complete(ready())
-                self.two_players_game(self.ip_entry.get())
+                self.two_players_online_game(self.ip_entry.get())
             except Exception as e:
+                print(e)
                 statement = Label(self.server_connection, text='Connection Failed!', fg='red', bg='black')
                 statement.place(x=44, y=122)
                 self.server_connection.after(2000, statement.destroy)
@@ -112,7 +114,7 @@ class GameMenu:
         self.load_selected_game = Button(self.env, text='LOAD', command=get_value, bg='darkgreen', fg='white')
         self.load_selected_game.place(x=300, y=10)
 
-    def two_players_game(self, ip):
+    def two_players_game(self):
         self.main_canvas.place_forget()
         self.load_exemplary_game_button.place_forget()
         self.load_game_button.place_forget()
@@ -124,7 +126,21 @@ class GameMenu:
         self.game_frame.place(x=0, y=0)
         self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
         self.save_button.place(x=1165, y=625)
-        self.game = Board(self.game_frame, TwoPlayersGame(), '3', ip)
+        self.game = Board(self.game_frame, TwoPlayersGame(), '2')
+
+    def two_players_online_game(self, ip):
+        self.main_canvas.place_forget()
+        self.load_exemplary_game_button.place_forget()
+        self.load_game_button.place_forget()
+        self.env.geometry('1425x1000')
+        self.env.configure(bg='black')
+        self.return_button = Button(self.env, text='X', command=self.return_to_menu)
+        self.return_button.place(x=1385, y=25)
+        self.game_frame = Frame(self.env, width=1375, height=1000, bg='black')
+        self.game_frame.place(x=0, y=0)
+        self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
+        self.save_button.place(x=1165, y=625)
+        self.game = OnlineBoard(self.game_frame, TwoPlayersGame(), '0', ip)
 
     def display_text_window(self):
         if not self.game_text_window:
@@ -207,7 +223,7 @@ class GameMenu:
 
 
 class Board:
-    def __init__(self, env, game_, mode, ip=None):
+    def __init__(self, env, game_, mode):
         self.env = env
         self.game = game_
         self.board = None
@@ -222,18 +238,15 @@ class Board:
         self.mode = mode
         self.moved_piece_tag = None
         self.tour = 0
+        self.move_counter = 0
         self.check = False
         self.possible_promotions = []
         self.promotion_data = None
-        self.move_counter = 0
-        self.online_game_data = []
-        self.ip_address = ip
+
         if self.mode == '1':
             self.game_description()
             self.display()
         elif self.mode == '2':
-            self.display_two_players_game()
-        else:
             self.display_two_players_game()
 
     def set_counter(self, event, num):
@@ -467,7 +480,7 @@ class Board:
                                     tags=(f'{piece.piece_notation_position()}', f'{piece.color}', f'{piece.piece_type}',
                                           'piece'))
 
-        self.online_move_listener()
+        # self.online_move_listener()
 
         self.board.bind('<1>', self.pick_a_piece)
         self.board.bind('<B1-Motion>', self.piece_move_game)
@@ -496,6 +509,9 @@ class Board:
         if red_points:
             for point in red_points:
                 self.board.delete(point)
+
+        print('tour:', self.tour)
+
         if self.tour % 2 == 0:
             choose_side = white_pieces
         else:
@@ -549,9 +565,9 @@ class Board:
 
 
         def castle(king, rook, king_position, rook_position):
-
-            self.send_move_to_server(king.position, king_position, 'castle')
-            self.send_move_to_server(rook.position, rook_position, 'castle')
+            if self.mode == '0':
+                self.send_move_to_server(king.position, king_position, 'castle')
+                self.send_move_to_server(rook.position, rook_position, 'castle')
 
             rook_old_field = rook_position
             king_coords = self.create_coords(king_position)
@@ -583,6 +599,7 @@ class Board:
             self.board.itemconfig(rook_on_board, tags=rook_new_tags)
 
             self.moved_piece_tag = None
+            print('602dodaje 1')
             self.tour += 1
 
         special_move = False
@@ -682,7 +699,9 @@ class Board:
                                 self.board.delete(self.board.find_withtag(new_field_description)[0])
                                 self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field),
                                                                     new_field)
-                                self.send_move_to_server(old_field, new_field, 'c')
+                                if self.mode == '0':
+                                    self.send_move_to_server(old_field, new_field, 'c')
+                                print('704dodaje 1')
                                 self.tour += 1
                             else:
                                 old_field_coords = self.create_coords(old_field)
@@ -691,7 +710,9 @@ class Board:
                         else:
                             self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field),
                                                              new_field)
-                            self.send_move_to_server(old_field, new_field)
+                            if self.mode == '0':
+                                self.send_move_to_server(old_field, new_field)
+                            print('715dodaje 1')
                             self.tour += 1
                         if not error:
                             new_tags = new_field_description
@@ -874,6 +895,17 @@ class Board:
                 row += 1
                 row_text = '''''
 
+class OnlineBoard(Board):
+    def __init__(self, env, game_, mode, ip):
+        super(OnlineBoard, self).__init__(env, game_, mode)
+        self.online_game_data = []
+        self.ip_address = ip
+        self.display_two_players_game()
+
+    def display_two_players_game(self):
+        super(OnlineBoard, self).display_two_players_game()
+        self.online_move_listener()
+
     def online_move_listener(self):
         def receive_data():
             async def send_move():
@@ -889,10 +921,16 @@ class Board:
         for move in server_game_moves:
             old_field, new_field, move_type = move
             if move not in self.online_game_data:
+                print('924dodaje 1')
                 self.tour += 1
+                print(self.tour)
                 if move_type == 'c':
+                    print(self.tour)
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
                 elif move_type == 'castle':
+
+                    print('odejmuje .5')
+                    self.tour -= .5
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
                 else:
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
@@ -944,6 +982,7 @@ class Board:
 
             except IndexError:
                 print('error')
+
 
 if __name__ == '__main__':
     env = Tk()

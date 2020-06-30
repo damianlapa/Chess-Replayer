@@ -695,6 +695,7 @@ class ChessBoard:
         return False
 
     def chess_piece_move(self, piece, new_position):
+        print(piece, new_position)
         if self.en_passant:
             if piece.piece_type == 'pawn' and new_position == self.en_passant[3]:
                 self.en_passant_capture = True
