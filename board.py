@@ -107,7 +107,6 @@ class GameMenu:
         self.all_database_games.place(x=300, y=40)
 
         def get_value():
-            print(database_game.get())
             self.game = NewGame(database_game.get())
             self.load_game()
 
@@ -219,7 +218,6 @@ class GameMenu:
             statement = Label(self.game_frame, text='GAME UPDATED', fg='green', bg='black')
             statement.place(x=1175, y=625)
             self.game_frame.after(2000, statement.destroy)
-        print(self.game_id)
 
 
 class Board:
@@ -368,6 +366,8 @@ class Board:
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
+
+
     def left_click(self, event):
         self.piece_move()
 
@@ -510,8 +510,6 @@ class Board:
             for point in red_points:
                 self.board.delete(point)
 
-        print('tour:', self.tour)
-
         if self.tour % 2 == 0:
             choose_side = white_pieces
         else:
@@ -576,6 +574,7 @@ class Board:
             rook_on_board = self.board.find_withtag(self.decode_position_number(rook.position))[0]
 
             self.game.board.castle(king, rook, king_position, rook_position)
+            self.display_current_game_moves()
 
             self.board.coords(king_on_board, king_coords[0], king_coords[1])
             self.board.coords(rook_on_board, rook_coords[0], rook_coords[1])
@@ -599,7 +598,6 @@ class Board:
             self.board.itemconfig(rook_on_board, tags=rook_new_tags)
 
             self.moved_piece_tag = None
-            print('602dodaje 1')
             self.tour += 1
 
         special_move = False
@@ -701,7 +699,6 @@ class Board:
                                                                     new_field)
                                 if self.mode == '0':
                                     self.send_move_to_server(old_field, new_field, 'c')
-                                print('704dodaje 1')
                                 self.tour += 1
                             else:
                                 old_field_coords = self.create_coords(old_field)
@@ -712,7 +709,6 @@ class Board:
                                                              new_field)
                             if self.mode == '0':
                                 self.send_move_to_server(old_field, new_field)
-                            print('715dodaje 1')
                             self.tour += 1
                         if not error:
                             new_tags = new_field_description
@@ -760,6 +756,8 @@ class Board:
             if points:
                 for point in points:
                     self.board.delete(point)
+
+            print('#1', self.game.board.game_description)
 
     def promotion_board_pick(self):
 
@@ -921,15 +919,10 @@ class OnlineBoard(Board):
         for move in server_game_moves:
             old_field, new_field, move_type = move
             if move not in self.online_game_data:
-                print('924dodaje 1')
                 self.tour += 1
-                print(self.tour)
                 if move_type == 'c':
-                    print(self.tour)
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
                 elif move_type == 'castle':
-
-                    print('odejmuje .5')
                     self.tour -= .5
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
                 else:
@@ -979,6 +972,7 @@ class OnlineBoard(Board):
                 for i in range(1, len(old_tags)):
                     new_tags += ' ' + old_tags[i]
                 self.board.itemconfig(moved_piece, tags=new_tags)
+                self.display_current_game_moves()
 
             except IndexError:
                 print('error')

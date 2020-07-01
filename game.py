@@ -508,7 +508,6 @@ class NewGame:
                 return pawn_position, final_position, self.pieces.index(pawn)
 
             elif move_type == 'short castle':
-                print('gotcha')
                 king_old_position = None
                 rook_old_position = None
                 for piece in self.pieces:
@@ -522,7 +521,6 @@ class NewGame:
                             king = piece if piece.position == 5 else None
                             if king:
                                 king_old_position = piece.position
-                                print()
                         if rook and king:
                             rook.new_position(6)
                             king.new_position(7)
@@ -695,7 +693,6 @@ class ChessBoard:
         return False
 
     def chess_piece_move(self, piece, new_position):
-        print(piece, new_position)
         if self.en_passant:
             if piece.piece_type == 'pawn' and new_position == self.en_passant[3]:
                 self.en_passant_capture = True
@@ -774,12 +771,7 @@ class ChessBoard:
             x = self.move_description.split(f'{field_notation}')
             self.move_description = x[0] + 'x' + field_notation
 
-        if self.castle_indicator:
-            if piece.position < new_position:
-                self.move_description = 'O-O'
-            else:
-                self.move_description = 'O-O-O'
-            self.castle_indicator = None
+
 
         piece_index = self.chess_pieces.index(piece)
         self.chess_pieces.remove(piece)
@@ -1170,12 +1162,27 @@ class ChessBoard:
 
     def castle(self, king, rook, king_position, rook_position):
         self.castle_indicator = True
-        self.chess_piece_move(king, king_position)
+        # self.chess_piece_move(king, king_position)
+        king_index = self.chess_pieces.index(king)
+        self.chess_pieces.remove(king)
+        king.new_position(king_position)
+        self.piece_current_moves(king)
+        self.chess_pieces.insert(king_index, king)
         rook_index = self.chess_pieces.index(rook)
         self.chess_pieces.remove(rook)
         rook.new_position(rook_position)
         self.piece_current_moves(rook)
         self.chess_pieces.insert(rook_index, rook)
+
+        if self.castle_indicator:
+            if king.position > rook_position:
+                self.move_description = 'O-O'
+            else:
+                self.move_description = 'O-O-O'
+            self.castle_indicator = None
+
+            self.game_description.append(self.move_description)
+
 
     def pawn_promotion(self, pawn, new_position, new_piece_type):
         new_piece_color = pawn.color
