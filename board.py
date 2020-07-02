@@ -564,8 +564,8 @@ class Board:
 
         def castle(king, rook, king_position, rook_position):
             if self.mode == '0':
-                self.send_move_to_server(king.position, king_position, 'castle')
-                self.send_move_to_server(rook.position, rook_position, 'castle')
+                self.send_move_to_server(king.position, king_position, 'castle', self.tour)
+                self.send_move_to_server(rook.position, rook_position, 'castle', self.tour)
 
             rook_old_field = rook_position
             king_coords = self.create_coords(king_position)
@@ -698,7 +698,7 @@ class Board:
                                 self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field),
                                                                     new_field)
                                 if self.mode == '0':
-                                    self.send_move_to_server(old_field, new_field, 'c')
+                                    self.send_move_to_server(old_field, new_field, 'c', self.tour)
                                 self.tour += 1
                             else:
                                 old_field_coords = self.create_coords(old_field)
@@ -708,7 +708,7 @@ class Board:
                             self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field),
                                                              new_field)
                             if self.mode == '0':
-                                self.send_move_to_server(old_field, new_field)
+                                self.send_move_to_server(old_field, new_field, None, self.tour)
                             self.tour += 1
                         if not error:
                             new_tags = new_field_description
@@ -917,7 +917,7 @@ class OnlineBoard(Board):
             return all_moves_data
         server_game_moves = json.loads(receive_data())
         for move in server_game_moves:
-            old_field, new_field, move_type = move
+            old_field, new_field, move_type, tour = move
             if move not in self.online_game_data:
                 self.tour += 1
                 if move_type == 'c':
@@ -937,11 +937,11 @@ class OnlineBoard(Board):
 
         self.board.after(1000, self.online_move_listener)
 
-    def send_move_to_server(self, old_position, new_position, extra_info=None):
+    def send_move_to_server(self, old_position, new_position, extra_info=None, tour=0):
         async def send_move():
             uri = "ws://{}:8765".format(self.ip_address)
             async with websockets.connect(uri) as websocket:
-                move = [old_position, new_position, extra_info]
+                move = [old_position, new_position, extra_info, tour]
                 self.online_game_data.append(move)
                 move_json = json.dumps(move)
                 await websocket.send(move_json)
