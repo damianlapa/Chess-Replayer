@@ -5,7 +5,7 @@ import websockets
 import asyncio
 import json
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
-from database import load_game_from_database, save_game_to_database, update_game, return_all_games
+from database import connect_to_database, load_game_from_database, save_game_to_database, update_game, return_all_games
 
 white_pawn = ChessPiece('pawn', 9)
 white_pawn_2 = ChessPiece('pawn', 13)
@@ -37,9 +37,14 @@ class GameMenu:
         self.load_button = None
         self.all_database_games = None
         self.load_selected_game = None
+        self.settings_button = None
+        self.settings_board = None
         self.game_id = None
         self.server_connection = None
         self.ip_entry = None
+        self.user = None
+        self.password = None
+        self.database = None
         self.main_menu()
 
     def main_menu(self):
@@ -60,6 +65,10 @@ class GameMenu:
             self.game_text_window.place_forget()
         if self.all_database_games:
             self.all_database_games.place_forget()
+        if self.settings_board:
+            self.settings_board.place_forget()
+        if self.server_connection:
+            self.server_connection.place_forget()
         self.load_exemplary_game_button = Button(self.env, text='Load Exemplary', command=self.load_exemplary_game)
         self.load_exemplary_game_button.place(x=50, y=50)
         self.load_game_button = Button(self.env, text='Paste Game Description', command=self.display_text_window)
@@ -70,8 +79,60 @@ class GameMenu:
         self.two_players_online_button.place(x=50, y=200)
         self.load_button = Button(self.env, text='Load game from database', command=self.load_database_game)
         self.load_button.place(x=50, y=250)
+        self.settings_button = Button(self.env, text='Settings', command=self.settings)
+        self.settings_button.place(x=50, y=450)
+
+    def settings(self):
+        if self.server_connection:
+            self.server_connection.place_forget()
+            self.server_connection = None
+        if self.game_text_window:
+            self.game_text_window.place_forget()
+            self.read_text_button.place_forget()
+            self.game_text_window = None
+        self.settings_board = Frame(self.env, height=300, width=500, bg='grey')
+        self.settings_board.place(x=275, y=125)
+        title = Label(self.settings_board, text='CONNECT TO DATABASE', bg='grey', fg='darkred',
+                      font=('Arial', 26)).place(x=35, y=5)
+        username_field = Entry(self.settings_board)
+        username_field.place(x=125, y=50)
+        username_label = Label(self.settings_board, text='Username:', bg='grey')
+        username_label.place(x=5, y=50)
+        password_field = Entry(self.settings_board)
+        password_field.place(x=125, y=75)
+        password_label = Label(self.settings_board, text='Password:', bg='grey')
+        password_label.place(x=5, y=75)
+        database_field = Entry(self.settings_board)
+        database_field.place(x=125, y=100)
+        database_label = Label(self.settings_board, text='Database:', bg='grey')
+        database_label.place(x=5, y=100)
+
+        try:
+            def database_connect():
+                username_input = username_field.get()
+                password_input = password_field.get()
+                database_input = database_field.get()
+                if connect_to_database(username_input, password_input, database_input):
+                    self.user = username_input
+                    self.password = password_input
+                    self.database = database_input
+                    self.settings_board.place_forget()
+                else:
+                    pass
+
+            connect_button = Button(self.settings_board, text='Connect', bg='darkred', command=database_connect).place(x=160, y=135)
+        except Exception as e:
+            print(e)
 
     def set_ip_address(self):
+        if self.settings_board:
+            self.settings_board.place_forget()
+            self.settings_board = None
+        if self.game_text_window:
+            self.game_text_window.place_forget()
+            self.read_text_button.place_forget()
+            self.read_text_button = None
+            self.game_text_window = None
         self.server_connection = Frame(self.env, width=220, height=150, bg='black')
         self.server_connection.place(x=275, y=150)
         ip_text = Label(self.server_connection, text='Enter an IP server address:', bg='black', fg='white')
@@ -101,17 +162,21 @@ class GameMenu:
 
     def load_database_game(self):
         database_game = StringVar(self.env)
-        games = return_all_games()
-        self.all_database_games = Combobox(self.env, textvariable=database_game, values=games, state='readonly',
-                                           width=50)
-        self.all_database_games.place(x=300, y=40)
+        database_connection = connect_to_database(self.user, self.password, self.database)
+        try:
+            games = return_all_games(database_connection)
+            self.all_database_games = Combobox(self.env, textvariable=database_game, values=games, state='readonly',
+                                               width=50)
+            self.all_database_games.place(x=300, y=40)
 
-        def get_value():
-            self.game = NewGame(database_game.get())
-            self.load_game()
+            def get_value():
+                self.game = NewGame(database_game.get())
+                self.load_game()
 
-        self.load_selected_game = Button(self.env, text='LOAD', command=get_value, bg='darkgreen', fg='white')
-        self.load_selected_game.place(x=300, y=10)
+            self.load_selected_game = Button(self.env, text='LOAD', command=get_value, bg='darkgreen', fg='white')
+            self.load_selected_game.place(x=300, y=10)
+        except Exception as e:
+            self.settings()
 
     def two_players_game(self):
         self.main_canvas.place_forget()
@@ -155,6 +220,12 @@ class GameMenu:
         return True
 
     def load_pasted_game(self):
+        if self.settings_board:
+            self.settings_board.place_forget()
+            self.settings_board = None
+        if self.server_connection:
+            self.server_connection.place_forget()
+            self.server_connection = None
         pasted_text = self.game_text_window.get('1.0', 'end-1c')
         self.game = NewGame(pasted_text)
         test = self.test_pasted_game(self.game)
@@ -755,7 +826,6 @@ class Board:
             if points:
                 for point in points:
                     self.board.delete(point)
-
 
     def promotion_board_pick(self):
 

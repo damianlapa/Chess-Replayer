@@ -10,8 +10,7 @@ def connect_to_database(user, password, database):
         print('connection failed')
 
 
-def save_game_to_database(game):
-    cnx = connect_to_database()
+def save_game_to_database(game, cnx):
     sql = '''
     INSERT INTO games(game_pgn) VALUES('{}')
     RETURNING game_id
@@ -28,10 +27,9 @@ def save_game_to_database(game):
     return game_id
 
 
-def load_game_from_database():
+def load_game_from_database(cnx):
     game_pgn = None
     data = []
-    cnx = connect_to_database()
     sql = '''
     SELECT * FROM games
     '''
@@ -52,8 +50,7 @@ def load_game_from_database():
         return game_pgn
 
 
-def update_game(game_id, game):
-    cnx = connect_to_database()
+def update_game(game_id, game, cnx):
     sql = f'''
     UPDATE games
     SET game_pgn='{game}'
@@ -69,9 +66,8 @@ def update_game(game_id, game):
     cnx.close()
 
 
-def return_all_games():
+def return_all_games(cnx):
     all_games = []
-    cnx = connect_to_database()
     sql = '''
     SELECT game_pgn from games'''
     try:
