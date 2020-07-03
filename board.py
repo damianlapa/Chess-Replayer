@@ -87,6 +87,7 @@ class GameMenu:
                     async with websockets.connect(uri) as websocket:
                         await websocket.send('ready')
                         pass
+
                 response = asyncio.get_event_loop().run_until_complete(ready())
                 self.two_players_online_game(self.ip_entry.get())
             except Exception as e:
@@ -94,7 +95,6 @@ class GameMenu:
                 statement = Label(self.server_connection, text='Connection Failed!', fg='red', bg='black')
                 statement.place(x=44, y=122)
                 self.server_connection.after(2000, statement.destroy)
-
 
         connect_button = Button(self.server_connection, text='CONNECT', command=get_an_address)
         connect_button.place(x=66, y=88)
@@ -366,8 +366,6 @@ class Board:
         self.board.create_image(piece_x, piece_y, image=piece_image,
                                 tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
-
-
     def left_click(self, event):
         self.piece_move()
 
@@ -561,11 +559,12 @@ class Board:
         old_field = None
         new_field = None
 
-
         def castle(king, rook, king_position, rook_position):
             if self.mode == '0':
-                self.send_move_to_server(king.position, king_position, 'castle', self.tour)
-                self.send_move_to_server(rook.position, rook_position, 'castle', self.tour)
+                # self.send_move_to_server(king.position, king_position, 'castle', self.tour)
+                # self.send_move_to_server(rook.position, rook_position, 'castle', self.tour)
+                castle_data = [king.position, rook.position, king_position, rook_position]
+                self.send_move_to_server(0, 0, castle_data, self.tour)
 
             rook_old_field = rook_position
             king_coords = self.create_coords(king_position)
@@ -757,7 +756,6 @@ class Board:
                 for point in points:
                     self.board.delete(point)
 
-            print('#1', self.game.board.game_description)
 
     def promotion_board_pick(self):
 
@@ -893,6 +891,7 @@ class Board:
                 row += 1
                 row_text = '''''
 
+
 class OnlineBoard(Board):
     def __init__(self, env, game_, mode, ip):
         super(OnlineBoard, self).__init__(env, game_, mode)
@@ -915,6 +914,7 @@ class OnlineBoard(Board):
 
             all_moves_data = asyncio.get_event_loop().run_until_complete(send_move())
             return all_moves_data
+
         server_game_moves = json.loads(receive_data())
         for move in server_game_moves:
             old_field, new_field, move_type, tour = move
@@ -922,9 +922,13 @@ class OnlineBoard(Board):
                 self.tour += 1
                 if move_type == 'c':
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
-                elif move_type == 'castle':
-                    self.tour -= .5
-                    self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
+                elif move_type and isinstance(move_type, (tuple, list)):
+                    pass
+                    '''self.tour += 1
+                    a, b, c, d = move_type
+                    king = self.game.board.find_piece_by_position(a)
+                    rook = self.game.board.find_piece_by_position(b)
+                    self.game.board.castle(king, rook, c, d)'''
                 else:
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
 
@@ -956,7 +960,7 @@ class OnlineBoard(Board):
         moved_piece = self.board.find_withtag(self.decode_position_number(old_field))
         if moved_piece:
             try:
-                if move_type:
+                if move_type and not isinstance(move_type, (list, tuple)):
                     self.board.delete(self.board.find_withtag(self.decode_position_number(new_field)))
                 piece_tags = self.board.itemcget(moved_piece, 'tags')
                 old_tags = piece_tags.split()
@@ -976,6 +980,40 @@ class OnlineBoard(Board):
 
             except IndexError:
                 print('error')
+
+        elif isinstance(move_type, (list, tuple)):
+            king_place, rook_place, king_position, rook_position = move_type
+            king = self.game.board.find_piece_by_position(king_place)
+            rook = self.game.board.find_piece_by_position(rook_place)
+            rook_old_field = rook_position
+            king_coords = self.create_coords(king_position)
+            rook_coords = self.create_coords(rook_position)
+            king_on_board = self.board.find_withtag(self.decode_position_number(king.position))[0]
+            rook_on_board = self.board.find_withtag(self.decode_position_number(rook.position))[0]
+
+            self.game.board.castle(king, rook, king_position, rook_position)
+            self.display_current_game_moves()
+
+            self.board.coords(king_on_board, king_coords[0], king_coords[1])
+            self.board.coords(rook_on_board, rook_coords[0], rook_coords[1])
+
+            king_tags = self.board.itemcget(king_on_board, 'tags')
+            king_old_tags = king_tags.split()
+            king_new_field_description = self.decode_position_number(king_position)
+
+            rook_tags = self.board.itemcget(rook_on_board, 'tags')
+            rook_old_tags = rook_tags.split()
+            rook_new_field_description = self.decode_position_number(rook_position)
+
+            king_new_tags = king_new_field_description
+            for i in range(1, len(king_old_tags)):
+                king_new_tags += ' ' + king_old_tags[i]
+            self.board.itemconfig(king_on_board, tags=king_new_tags)
+
+            rook_new_tags = rook_new_field_description
+            for i in range(1, len(rook_old_tags)):
+                rook_new_tags += ' ' + rook_old_tags[i]
+            self.board.itemconfig(rook_on_board, tags=rook_new_tags)
 
 
 if __name__ == '__main__':
