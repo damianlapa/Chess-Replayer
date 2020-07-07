@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import websockets
 import asyncio
 import json
+import datetime
 from game import ChessPiece, NewGame, TwoPlayersGame, ChessBoard
 from database import connect_to_database, load_game_from_database, save_game_to_database, update_game, return_all_games
 
@@ -965,13 +966,21 @@ class Board:
 class OnlineBoard(Board):
     def __init__(self, env, game_, mode, ip):
         super(OnlineBoard, self).__init__(env, game_, mode)
+        self.white_timer_label = None
+        self.black_timer_label = None
+        self.white_timer = StringVar()
+        self.black_timer = StringVar()
+        self.black_timer = datetime.datetime.strptime('0:10:00.000000', '%H:%M:%S.%f').strftime('%H:%M:%S.%f')
+        self.white_timer = datetime.datetime.strptime('0:10:00.000000', '%H:%M:%S.%f').strftime('%H:%M:%S.%f')
         self.online_game_data = []
         self.ip_address = ip
+        self.side = None
         self.display_two_players_game()
 
     def display_two_players_game(self):
         super(OnlineBoard, self).display_two_players_game()
         self.online_move_listener()
+        self.timers_set()
 
     def online_move_listener(self):
         def receive_data():
@@ -987,8 +996,11 @@ class OnlineBoard(Board):
 
         server_game_moves = json.loads(receive_data())
         for move in server_game_moves:
-            old_field, new_field, move_type, tour = move
+            if not self.side:
+                self.side = 'black'
+            old_field, new_field, move_type, tour, opponent_timer = move
             if move not in self.online_game_data:
+                self.opponent_timer_set(opponent_timer)
                 self.tour += 1
                 if move_type == 'c':
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
@@ -1015,7 +1027,15 @@ class OnlineBoard(Board):
         async def send_move():
             uri = "ws://{}:8765".format(self.ip_address)
             async with websockets.connect(uri) as websocket:
-                move = [old_position, new_position, extra_info, tour]
+                timer = None
+                if not self.side:
+                    self.side = 'white'
+                    timer = self.white_timer
+                if self.side == 'black':
+                    timer = self.black_timer
+                elif self.side == 'white':
+                    timer = self.white_timer
+                move = [old_position, new_position, extra_info, tour, timer]
                 self.online_game_data.append(move)
                 move_json = json.dumps(move)
                 await websocket.send(move_json)
@@ -1084,6 +1104,46 @@ class OnlineBoard(Board):
             for i in range(1, len(rook_old_tags)):
                 rook_new_tags += ' ' + rook_old_tags[i]
             self.board.itemconfig(rook_on_board, tags=rook_new_tags)
+
+    def timers_set(self):
+
+        if self.side:
+
+            if self.tour % 2 == 0:
+                self.black_timer = self.current_timer_counting_down(self.black_timer)
+            elif self.tour % 2 == 1:
+                self.white_timer = self.current_timer_counting_down(self.white_timer)
+
+        if not self.white_timer_label:
+            self.white_timer_label = Label(self.env, text=self.white_timer[:-7])
+            self.white_timer_label.place(x=999, y=111)
+        else:
+            self.white_timer_label.configure(text=self.white_timer[:-7])
+
+        if not self.black_timer_label:
+            self.black_timer_label = Label(self.env, text=self.black_timer[:-7])
+            self.black_timer_label.place(x=999, y=777)
+        else:
+            self.black_timer_label.configure(text=self.black_timer[:-7])
+
+        self.env.after(100, self.timers_set)
+
+    def current_timer_counting_down(self, timer):
+        timer_difference = datetime.datetime.strptime(timer, '%H:%M:%S.%f') - datetime.datetime.strptime('1000', '%f')
+        timer_seconds = timer_difference.seconds
+        hours = timer_seconds // 3600
+        minutes = (timer_seconds - hours * 3600) // 60
+        seconds = timer_seconds % 60
+        microseconds = timer_difference.microseconds
+        timer_value = datetime.datetime.strptime(f'{hours}:{minutes}:{seconds}.{microseconds}', '%H:%M:%S.%f')
+        timer_value = datetime.datetime.strftime(timer_value, '%H:%M:%S.%f')
+        return timer_value
+
+    def opponent_timer_set(self, timer_value):
+        if self.side == 'white':
+            self.black_timer = timer_value
+        else:
+            self.white_timer = timer_value
 
 
 if __name__ == '__main__':
