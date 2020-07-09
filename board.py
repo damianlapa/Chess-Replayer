@@ -46,6 +46,7 @@ class GameMenu:
         self.user = None
         self.password = None
         self.database = None
+        self.database_connection = None
         self.main_menu()
 
     def main_menu(self):
@@ -113,15 +114,14 @@ class GameMenu:
                 username_input = username_field.get()
                 password_input = password_field.get()
                 database_input = database_field.get()
-                if connect_to_database(username_input, password_input, database_input):
-                    self.user = username_input
-                    self.password = password_input
-                    self.database = database_input
-                    self.settings_board.place_forget()
-                else:
-                    pass
+                self.user = username_input
+                self.password = password_input
+                self.database = database_input
+                self.settings_board.place_forget()
+                self.database_connection = connect_to_database(username_input, password_input, database_input)
 
             connect_button = Button(self.settings_board, text='Connect', bg='darkred', command=database_connect).place(x=160, y=135)
+
         except Exception as e:
             print(e)
 
@@ -281,12 +281,12 @@ class GameMenu:
 
     def save(self):
         if not self.game_id:
-            self.game_id = save_game_to_database(self.game.game.board.create_pgn())
+            self.game_id = save_game_to_database(self.game.game.board.create_pgn, self.database_connection)
             statement = Label(self.game_frame, text='GAME SAVED', fg='green', bg='black')
             statement.place(x=1175, y=625)
             self.game_frame.after(2000, statement.destroy)
         else:
-            update_game(self.game_id, self.game.game.board.create_pgn())
+            update_game(self.game_id, self.game.game.board.create_pgn(), self.database_connection)
             statement = Label(self.game_frame, text='GAME UPDATED', fg='green', bg='black')
             statement.place(x=1175, y=625)
             self.game_frame.after(2000, statement.destroy)
@@ -1115,13 +1115,13 @@ class OnlineBoard(Board):
                 self.white_timer = self.current_timer_counting_down(self.white_timer)
 
         if not self.white_timer_label:
-            self.white_timer_label = Label(self.env, text=self.white_timer[:-7])
+            self.white_timer_label = Label(self.env, text=self.white_timer[:-7], font=("Courier", 44))
             self.white_timer_label.place(x=999, y=111)
         else:
             self.white_timer_label.configure(text=self.white_timer[:-7])
 
         if not self.black_timer_label:
-            self.black_timer_label = Label(self.env, text=self.black_timer[:-7])
+            self.black_timer_label = Label(self.env, text=self.black_timer[:-7], font=("Courier", 44))
             self.black_timer_label.place(x=999, y=777)
         else:
             self.black_timer_label.configure(text=self.black_timer[:-7])

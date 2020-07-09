@@ -1,4 +1,4 @@
-from game import ChessPiece, NewGame
+from game import ChessPiece, NewGame, ChessBoard
 
 game_text = '''
 1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6
@@ -67,6 +67,15 @@ def test_piece_notation_position():
     piece_3 = ChessPiece('king', 37)
     assert piece_1.piece_notation_position() == 'a1' and piece_2.piece_notation_position() == 'h2' and \
            piece_3.piece_notation_position() == 'e5'
+
+
+def test_change_field_number_to_position():
+    test_board = ChessBoard()
+    '''new_piece = ChessPiece('bishop', 3)
+    test_board.add_piece(new_piece)
+    test_board.chess_piece_move(new_piece, 40)'''
+    assert test_board.change_field_number_to_description(40) == 'h5'
+
 
 
 

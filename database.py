@@ -23,7 +23,6 @@ def save_game_to_database(game, cnx):
         cursor.close()
     except OperationalError:
         pass
-    cnx.close()
     return game_id
 
 
@@ -63,7 +62,6 @@ def update_game(game_id, game, cnx):
         cursor.close()
     except OperationalError:
         pass
-    cnx.close()
 
 
 def return_all_games(cnx):
@@ -79,5 +77,4 @@ def return_all_games(cnx):
         cursor.close()
     except OperationalError:
         pass
-    cnx.close()
     return all_games

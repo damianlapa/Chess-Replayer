@@ -1195,7 +1195,7 @@ class ChessBoard:
 
     def change_field_number_to_description(self, field_nr):
         field_column = alphabet[field_nr % 8 - 1 if field_nr % 8 != 0 else 7]
-        field_row = field_nr // 8 + 1 if field_nr % 8 != 0 else field_nr // 8 - 1
+        field_row = field_nr // 8 + 1 if field_nr % 8 != 0 else field_nr // 8
         field_notation = field_column + str(field_row)
 
         return field_notation
