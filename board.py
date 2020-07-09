@@ -191,6 +191,10 @@ class GameMenu:
         self.game_frame.place(x=0, y=0)
         self.save_button = Button(self.game_frame, text='SAVE', command=self.save)
         self.save_button.place(x=1165, y=625)
+        if not self.database_connection:
+            self.save_button.configure(state=DISABLED)
+        else:
+            self.save_button.configure(state=ACTIVE)
         self.game = Board(self.game_frame, TwoPlayersGame(), '2')
 
     def two_players_online_game(self, ip):
