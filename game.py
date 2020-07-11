@@ -325,7 +325,7 @@ class NewGame:
         return rook.possible_moves
 
     # capturing a piece
-    def piece_capture(self, position, final_position):
+    def piece_capture(self, position, final_position, en_passant=False):
         piece_type = None
         piece_color = None
         captured_piece = None
@@ -339,7 +339,17 @@ class NewGame:
                 captured_piece = piece
             if None not in (capturing_piece, captured_piece):
                 break
-        if None in (capturing_piece, captured_piece):
+        if capturing_piece and not captured_piece:
+            if piece_type == 'pawn':
+                if piece_color == 'white':
+                    for piece in self.pieces:
+                        if piece.position == final_position - 8 and piece.piece_type == 'pawn':
+                            captured_piece = piece
+                else:
+                    for piece in self.pieces:
+                        if piece.position == final_position + 8 and piece.piece_type == 'pawn':
+                            captured_piece = piece
+        elif None in (capturing_piece, captured_piece):
             raise NameError('brak elemetu')
         self.pieces.remove(captured_piece)
         self.pieces.remove(capturing_piece)
@@ -453,6 +463,7 @@ class NewGame:
         else:
             king = None
             rook = None
+            en_passant = True
             if move_type == 'pawn':
                 final_position = (int(self.game_moves[num][1]) - 1) * 8 + alphabet.index(self.game_moves[num][0]) + 1
                 for piece in self.pieces:
@@ -487,6 +498,11 @@ class NewGame:
                                     return old_position, piece.position, self.pieces.index(piece)
             elif move_type == 'pawn capture':
                 final_position = (int(self.game_moves[num][3]) - 1) * 8 + alphabet.index(self.game_moves[num][2]) + 1
+
+                for piece in self.pieces:
+                    if piece.position == final_position:
+                        en_passant = False
+
                 pawn_horizontal_position = alphabet.index(self.game_moves[num][0])
                 final_horizontal_position = alphabet.index(self.game_moves[num][2])
 

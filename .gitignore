@@ -13,6 +13,7 @@ ws_client_tkinter.py
 board2.py
 board3.py
 datetime_tests.py
+to_do.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

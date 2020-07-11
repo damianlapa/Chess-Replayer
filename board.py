@@ -253,7 +253,10 @@ class GameMenu:
         37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0
         '''
         test_2 = '1. e4 e5 2. d4 d5 3. exd5 exd4 4. Qe2+ Qe7 5. Nc3 Qxe2+ 6. Bxe2 dxc3 7. bxc3'
-        self.game = NewGame(test_game)
+        en_passant_test = '''
+        1. e4 e5 2. d4 f6 3. d5 c5 4. dxc6 d5
+        '''
+        self.game = NewGame(en_passant_test)
         self.load_game()
 
     def load_game(self):
@@ -285,7 +288,7 @@ class GameMenu:
 
     def save(self):
         if not self.game_id:
-            self.game_id = save_game_to_database(self.game.game.board.create_pgn, self.database_connection)
+            self.game_id = save_game_to_database(self.game.game.board.create_pgn(), self.database_connection)
             statement = Label(self.game_frame, text='GAME SAVED', fg='green', bg='black')
             statement.place(x=1175, y=625)
             self.game_frame.after(2000, statement.destroy)
@@ -409,38 +412,41 @@ class Board:
         number = (alphabet2.index(field_description[0]) + 1) + (int(field_description[1]) - 1) * 8
         return number
 
-    def move_piece(self, piece_to_move, new_position, piece_index):
+    def move_piece(self, piece_to_move, new_position, piece_index, en_passant=False):
 
-        field = self.board.find_withtag('field')
-        old_field = self.board.find_withtag('old_field')
-        if old_field:
-            self.board.delete(old_field[0])
-        if field:
-            self.board.delete(field[0])
-        text = self.decode_position_number(piece_to_move)
-        text_2 = self.decode_position_number(new_position)
-        tags = self.board.gettags(self.board.find_withtag(text)[0])
-        try:
-            tags_2 = self.board.gettags(self.board.find_withtag(text_2)[0])
-            self.board.delete(self.board.find_withtag(text_2)[0])
-        except IndexError:
+        if en_passant:
             pass
-        self.board.delete(self.board.find_withtag(text)[0])
-        piece = self.pieces[piece_index]
-        piece_image = piece.representation()
-        piece_old_x = (piece_to_move % 8 - 1) * 100 + 50 if piece_to_move % 8 != 0 else 750
-        piece_old_y = 800 - (piece_to_move // 8) * 100 - 50 if piece_to_move % 8 != 0 else 750 - (
-                piece_to_move // 8 - 1) * 100
-        piece.new_position(new_position)
-        piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
-        piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
-                piece.position // 8 - 1) * 100
-        self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field',
-                                    outline='')
-        self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50,
-                                    fill='#D9AF2D', tag='old_field', outline='')
-        self.board.create_image(piece_x, piece_y, image=piece_image,
-                                tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
+        else:
+            field = self.board.find_withtag('field')
+            old_field = self.board.find_withtag('old_field')
+            if old_field:
+                self.board.delete(old_field[0])
+            if field:
+                self.board.delete(field[0])
+            text = self.decode_position_number(piece_to_move)
+            text_2 = self.decode_position_number(new_position)
+            tags = self.board.gettags(self.board.find_withtag(text)[0])
+            try:
+                tags_2 = self.board.gettags(self.board.find_withtag(text_2)[0])
+                self.board.delete(self.board.find_withtag(text_2)[0])
+            except IndexError:
+                pass
+            self.board.delete(self.board.find_withtag(text)[0])
+            piece = self.pieces[piece_index]
+            piece_image = piece.representation()
+            piece_old_x = (piece_to_move % 8 - 1) * 100 + 50 if piece_to_move % 8 != 0 else 750
+            piece_old_y = 800 - (piece_to_move // 8) * 100 - 50 if piece_to_move % 8 != 0 else 750 - (
+                    piece_to_move // 8 - 1) * 100
+            piece.new_position(new_position)
+            piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
+            piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
+                    piece.position // 8 - 1) * 100
+            self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field',
+                                        outline='')
+            self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50,
+                                        fill='#D9AF2D', tag='old_field', outline='')
+            self.board.create_image(piece_x, piece_y, image=piece_image,
+                                    tags=(f'{piece.piece_notation_position()}', f'{self.pieces.index(piece)}', 'piece'))
 
     def left_click(self, event):
         self.piece_move()
