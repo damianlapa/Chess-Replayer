@@ -120,7 +120,8 @@ class GameMenu:
                 self.settings_board.place_forget()
                 self.database_connection = connect_to_database(username_input, password_input, database_input)
 
-            connect_button = Button(self.settings_board, text='Connect', bg='darkred', command=database_connect).place(x=160, y=135)
+            connect_button = Button(self.settings_board, text='Connect', bg='darkred', command=database_connect).place(
+                x=160, y=135)
 
         except Exception as e:
             print(e)
@@ -441,7 +442,8 @@ class Board:
             piece_x = (piece.position % 8 - 1) * 100 + 50 if piece.position % 8 != 0 else 750
             piece_y = 800 - (piece.position // 8) * 100 - 50 if piece.position % 8 != 0 else 750 - (
                     piece.position // 8 - 1) * 100
-            self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134', tag='field',
+            self.board.create_rectangle(piece_x - 50, piece_y - 50, piece_x + 50, piece_y + 50, fill='#EEC134',
+                                        tag='field',
                                         outline='')
             self.board.create_rectangle(piece_old_x - 50, piece_old_y - 50, piece_old_x + 50, piece_old_y + 50,
                                         fill='#D9AF2D', tag='old_field', outline='')
@@ -597,6 +599,7 @@ class Board:
         if picked_piece:
             if picked_piece in choose_side:
                 tags = self.board.itemcget(picked_piece, 'tags')
+                print(tags)
                 picked_piece_object = self.game.board.find_piece_by_position(
                     self.change_field_description_to_number(tags.split()[0]))
                 self.game.board.piece_current_moves(picked_piece_object)
@@ -686,6 +689,7 @@ class Board:
         error = None
         moved_piece = None
         if self.moved_piece_tag:
+            print(self.moved_piece_tag)
             moved_piece = self.board.find_withtag(self.moved_piece_tag)
         if moved_piece:
             try:
@@ -698,7 +702,7 @@ class Board:
                 self.game.board.piece_current_moves(moved_piece_object)
 
             except IndexError:
-                print('error')
+                print('error#0')
 
             if moved_piece_object.piece_type == 'king':
                 self.game.board.king_castle_possibility(moved_piece_object)
@@ -778,7 +782,7 @@ class Board:
                                 self.board.delete(self.board.find_withtag(new_field_description)[0])
                                 self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field),
                                                                     new_field)
-                                if self.mode == '0':
+                                if self.mode == '0' and not promotion:
                                     self.send_move_to_server(old_field, new_field, 'c', self.tour)
                                 self.tour += 1
                             else:
@@ -788,7 +792,7 @@ class Board:
                         else:
                             self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field),
                                                              new_field)
-                            if self.mode == '0':
+                            if self.mode == '0' and not promotion:
                                 self.send_move_to_server(old_field, new_field, None, self.tour)
                             self.tour += 1
                         if not error:
@@ -801,7 +805,8 @@ class Board:
                             self.promotion_board.place(x=300, y=400)
                             self.promotion_board_pick()
 
-                            self.promotion_data = (new_field, moved_piece_object)
+                            self.promotion_data = (
+                                new_field, moved_piece_object, old_field, 'c' if new_field_occupancy else None)
 
                         for piece in self.pieces:
                             self.game.board.piece_current_moves(piece)
@@ -879,6 +884,9 @@ class Board:
                                     tags=(f'{new_piece.piece_notation_position()}',
                                           f'{new_piece.color}', f'{new_piece.piece_type}',
                                           'piece'))
+            if self.mode == '0':
+                self.send_move_to_server(self.promotion_data[2], self.promotion_data[0], self.promotion_data[3],
+                                         self.tour, piece_type)
 
             self.promotion_board.unbind('<1>')
 
@@ -985,6 +993,7 @@ class OnlineBoard(Board):
         self.online_game_data = []
         self.ip_address = ip
         self.side = None
+        self.promoted_piece = None
         self.display_two_players_game()
 
     def display_two_players_game(self):
@@ -1008,7 +1017,7 @@ class OnlineBoard(Board):
         for move in server_game_moves:
             if not self.side:
                 self.side = 'black'
-            old_field, new_field, move_type, tour, opponent_timer = move
+            old_field, new_field, move_type, tour, opponent_timer, promotion = move
             if move not in self.online_game_data:
                 self.opponent_timer_set(opponent_timer)
                 self.tour += 1
@@ -1024,16 +1033,20 @@ class OnlineBoard(Board):
                 else:
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
 
+                if promotion:
+                    self.promoted_piece = self.game.board.pawn_promotion(
+                        self.game.board.find_piece_by_position(new_field), new_field, promotion)
+
                 self.board.bind('<1>', self.pick_a_piece)
                 self.board.bind('<B1-Motion>', self.piece_move_game)
                 self.board.bind('<ButtonRelease-1>', self.piece_new_place)
 
                 self.online_game_data.append(move)
-                self.opponent_move(old_field, new_field, move_type)
+                self.opponent_move(old_field, new_field, move_type, promotion)
 
         self.board.after(1000, self.online_move_listener)
 
-    def send_move_to_server(self, old_position, new_position, extra_info=None, tour=0):
+    def send_move_to_server(self, old_position, new_position, extra_info=None, tour=0, promotion=None):
         async def send_move():
             uri = "ws://{}:8765".format(self.ip_address)
             async with websockets.connect(uri) as websocket:
@@ -1045,7 +1058,7 @@ class OnlineBoard(Board):
                     timer = self.black_timer
                 elif self.side == 'white':
                     timer = self.white_timer
-                move = [old_position, new_position, extra_info, tour, timer]
+                move = [old_position, new_position, extra_info, tour, timer, promotion]
                 self.online_game_data.append(move)
                 move_json = json.dumps(move)
                 await websocket.send(move_json)
@@ -1056,30 +1069,41 @@ class OnlineBoard(Board):
         self.board.unbind('<B1-Motion>')
         self.board.unbind('<ButtonRelease-1>')
 
-    def opponent_move(self, old_field, new_field, move_type):
+    def opponent_move(self, old_field, new_field, move_type, promotion):
         moved_piece = self.board.find_withtag(self.decode_position_number(old_field))
+        print(moved_piece, 'moved_piece')
         if moved_piece:
             try:
-                if move_type and not isinstance(move_type, (list, tuple)):
+                if not promotion:
+                    if move_type and not isinstance(move_type, (list, tuple)):
+                        self.board.delete(self.board.find_withtag(self.decode_position_number(new_field)))
+                    piece_tags = self.board.itemcget(moved_piece, 'tags')
+                    old_tags = piece_tags.split()
+                    old_field = self.change_field_description_to_number(old_tags[0])
+
+                    moved_piece_object = self.game.board.find_piece_by_position(new_field)
+                    self.game.board.piece_current_moves(moved_piece_object)
+                    new_coords = self.create_coords(new_field)
+                    self.board.coords(moved_piece, new_coords[0], new_coords[1])
+                    new_field_description = self.decode_position_number(new_field)
+
+                    new_tags = new_field_description
+                    for i in range(1, len(old_tags)):
+                        new_tags += ' ' + old_tags[i]
+                    self.board.itemconfig(moved_piece, tags=new_tags)
+                    self.display_current_game_moves()
+                else:
                     self.board.delete(self.board.find_withtag(self.decode_position_number(new_field)))
-                piece_tags = self.board.itemcget(moved_piece, 'tags')
-                old_tags = piece_tags.split()
-                old_field = self.change_field_description_to_number(old_tags[0])
-
-                moved_piece_object = self.game.board.find_piece_by_position(new_field)
-                self.game.board.piece_current_moves(moved_piece_object)
-                new_coords = self.create_coords(new_field)
-                self.board.coords(moved_piece, new_coords[0], new_coords[1])
-                new_field_description = self.decode_position_number(new_field)
-
-                new_tags = new_field_description
-                for i in range(1, len(old_tags)):
-                    new_tags += ' ' + old_tags[i]
-                self.board.itemconfig(moved_piece, tags=new_tags)
-                self.display_current_game_moves()
+                    piece_x = (new_field % 8 - 1) * 100 + 50 if new_field % 8 != 0 else 750
+                    piece_y = 800 - (new_field // 8) * 100 - 50 if new_field % 8 != 0 else 750 - (
+                            new_field // 8 - 1) * 100
+                    self.board.create_image(piece_x, piece_y, image=self.promoted_piece.representation(), tags=(
+                        f'{self.promoted_piece.piece_notation_position()}', f'{self.promoted_piece.color}',
+                        f'{self.promoted_piece.piece_type}',
+                        'piece'))
 
             except IndexError:
-                print('error')
+                print('error#1')
 
         elif isinstance(move_type, (list, tuple)):
             king_place, rook_place, king_position, rook_position = move_type
