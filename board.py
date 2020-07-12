@@ -599,7 +599,6 @@ class Board:
         if picked_piece:
             if picked_piece in choose_side:
                 tags = self.board.itemcget(picked_piece, 'tags')
-                print(tags)
                 picked_piece_object = self.game.board.find_piece_by_position(
                     self.change_field_description_to_number(tags.split()[0]))
                 self.game.board.piece_current_moves(picked_piece_object)
@@ -689,7 +688,6 @@ class Board:
         error = None
         moved_piece = None
         if self.moved_piece_tag:
-            print(self.moved_piece_tag)
             moved_piece = self.board.find_withtag(self.moved_piece_tag)
         if moved_piece:
             try:
@@ -842,6 +840,13 @@ class Board:
             if points:
                 for point in points:
                     self.board.delete(point)
+
+        if self.game.board.check_mate():
+            self.board.create_text(400, 400, text='CHECK MATE!', font=('Arial bold', 50), fill='red')
+
+            self.board.unbind('<1>')
+            self.board.unbind('<B1-Motion>')
+            self.board.unbind('<ButtonRelease-1>')
 
     def promotion_board_pick(self):
 
@@ -1071,7 +1076,6 @@ class OnlineBoard(Board):
 
     def opponent_move(self, old_field, new_field, move_type, promotion):
         moved_piece = self.board.find_withtag(self.decode_position_number(old_field))
-        print(moved_piece, 'moved_piece')
         if moved_piece:
             try:
                 if not promotion:

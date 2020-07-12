@@ -807,6 +807,8 @@ class ChessBoard:
 
         self.capture_marker = None
 
+        self.check_mate()
+
         '''if len(self.game_description) > 10:
             save_game_to_database(self.create_pgn())'''
 
@@ -1199,7 +1201,6 @@ class ChessBoard:
 
             self.game_description.append(self.move_description)
 
-
     def pawn_promotion(self, pawn, new_position, new_piece_type):
         new_piece_color = pawn.color
         new_piece_position = new_position
@@ -1227,6 +1228,44 @@ class ChessBoard:
                 pgn_text += str(self.game_description[num]) + ' '
         return pgn_text
 
+    def delete_piece_from_position(self, position):
+        for piece in self.chess_pieces:
+            if piece.position == position:
+                self.chess_pieces.remove(piece)
+                return
+
+    def check_mate(self):
+        color = None
+        king = None
+        check_mate = True
+        test_board = ChessBoard()
+        test_board.chess_pieces = self.copy_board()
+        if test_board.king_check('white'):
+            color = 'white'
+        elif test_board.king_check('black'):
+            color = 'black'
+        for piece in test_board.chess_pieces:
+            if piece.piece_type == 'king' and piece.color == color:
+                king = piece
+        if king:
+            test_board.piece_current_moves(king)
+
+            for piece in test_board.chess_pieces:
+                if piece.color == king.color:
+                    test_board.piece_current_moves(piece)
+                    for move in piece.possible_moves:
+                        piece_position = piece.position
+                        second_test = ChessBoard()
+                        second_test.chess_pieces = test_board.copy_board()
+                        for piece_second in second_test.chess_pieces:
+                            if piece_second.position == piece_position:
+                                if second_test.find_piece_by_position(move):
+                                    second_test.delete_piece_from_position(move)
+                                piece_second.new_position(move)
+                                if not second_test.king_check(color):
+                                    check_mate = False
+
+            return check_mate
 
 class TwoPlayersGame:
     def __init__(self):
