@@ -1,6 +1,5 @@
 from psycopg2 import connect, OperationalError
 
-
 def connect_to_database(user, password, database):
     try:
         cnx = connect(user=user, password=password, host='localhost', database=database)

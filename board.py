@@ -842,7 +842,7 @@ class Board:
                     self.board.delete(point)
 
         if self.game.board.check_mate():
-            self.board.create_text(400, 400, text='CHECK MATE!', font=('Arial bold', 50), fill='red')
+            self.board.create_text(400, 400, text='CHECKMATE!', font=('Arial bold', 50), fill='red')
 
             self.board.unbind('<1>')
             self.board.unbind('<B1-Motion>')
