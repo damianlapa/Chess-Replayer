@@ -801,7 +801,10 @@ class ChessBoard:
                 self.piece_current_moves(piece)
 
         if self.king_check('white') or self.king_check('black'):
-            self.move_description += '+'
+            if self.check_mate():
+                self.move_description += '# 0-1' if piece.color == 'white' else '# 1-0'
+            else:
+                self.move_description += '+'
 
         self.game_description.append(self.move_description)
 

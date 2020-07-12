@@ -842,11 +842,13 @@ class Board:
                     self.board.delete(point)
 
         if self.game.board.check_mate():
-            self.board.create_text(400, 400, text='CHECKMATE!', font=('Arial bold', 50), fill='red')
+            if not self.board.find_withtag('checkmate'):
+                self.board.create_text(400, 400, text='CHECKMATE!', font=('Arial bold', 50), fill='red',
+                                       tag='checkmate')
 
-            self.board.unbind('<1>')
-            self.board.unbind('<B1-Motion>')
-            self.board.unbind('<ButtonRelease-1>')
+                self.board.unbind('<1>')
+                self.board.unbind('<B1-Motion>')
+                self.board.unbind('<ButtonRelease-1>')
 
     def promotion_board_pick(self):
 
@@ -953,37 +955,6 @@ class Board:
                                               anchor='w', tag='move{}'.format(self.move_counter),
                                               font=('Arial bold', 12))
             self.move_counter += 1
-        '''all_moves = self.game.board.game_description
-        move_text = all_moves[-1]
-        if move_text:
-            if len(all_moves) % 2 == 1:
-                text = str(len(all_moves) // 2 + 1) + '.'
-                previous_move = self.game_desc_window.find_withtag('move_desc')
-                if previous_move:
-                    prev_coords = self.game_desc_window.bbox(previous_move[0])
-                    self.game_desc_window.create_text(prev_coords[2], 10, text=text, font=('Arial bold', 12), anchor='w',
-                                                      tag='move_desc'.format(str(len(all_moves) // 2 + 1)))
-                    previous_move = self.game_desc_window.find_withtag('move_desc')
-                    prev_coords = self.game_desc_window.bbox(previous_move[0])
-                    self.game_desc_window.create_text(prev_coords[2] + 3, 10, text=move_text)
-            else:
-                self.game_desc_window.create_text(10, 10, text='1. ', font=('Arial bold', 12), anchor='w',
-                                                  tag='move_desc')'''
-
-        '''row = 0
-        move_num = 1
-        row_text = ''
-        for i in range(0, len(self.game.board.game_description)):
-            if i % 2 == 0:
-                row_text += str(move_num) + '. '
-                move_num += 1
-            row_text += self.game.board.game_description[i] + ' '
-            print(i)
-            if (i + 1) % 8 == 0:
-                self.game_desc_window.create_text(10, 10 + 10 * row, text=f'{row_text}', tag='game_desc',
-                                                  font=('Arial bold', 12), anchor='w')
-                row += 1
-                row_text = '''''
 
 
 class OnlineBoard(Board):
@@ -999,6 +970,7 @@ class OnlineBoard(Board):
         self.ip_address = ip
         self.side = None
         self.promoted_piece = None
+        self.end_game = False
         self.display_two_players_game()
 
     def display_two_players_game(self):
@@ -1030,11 +1002,6 @@ class OnlineBoard(Board):
                     self.game.board.chess_piece_capture(self.game.board.find_piece_by_position(old_field), new_field)
                 elif move_type and isinstance(move_type, (tuple, list)):
                     pass
-                    '''self.tour += 1
-                    a, b, c, d = move_type
-                    king = self.game.board.find_piece_by_position(a)
-                    rook = self.game.board.find_piece_by_position(b)
-                    self.game.board.castle(king, rook, c, d)'''
                 else:
                     self.game.board.chess_piece_move(self.game.board.find_piece_by_position(old_field), int(new_field))
 
@@ -1106,6 +1073,17 @@ class OnlineBoard(Board):
                         f'{self.promoted_piece.piece_type}',
                         'piece'))
 
+                if self.game.board.check_mate():
+                    if not self.board.find_withtag('checkmate'):
+                        self.board.create_text(400, 400, text='CHECKMATE!', font=('Arial bold', 50), fill='red',
+                                               tag='checkmate')
+
+                        self.end_game = True
+
+                        self.board.unbind('<1>')
+                        self.board.unbind('<B1-Motion>')
+                        self.board.unbind('<ButtonRelease-1>')
+
             except IndexError:
                 print('error#1')
 
@@ -1145,26 +1123,28 @@ class OnlineBoard(Board):
 
     def timers_set(self):
 
-        if self.side:
+        if not self.end_game:
 
-            if self.tour % 2 == 0:
-                self.black_timer = self.current_timer_counting_down(self.black_timer)
-            elif self.tour % 2 == 1:
-                self.white_timer = self.current_timer_counting_down(self.white_timer)
+            if self.side:
 
-        if not self.white_timer_label:
-            self.white_timer_label = Label(self.env, text=self.white_timer[:-7], font=("Courier", 44))
-            self.white_timer_label.place(x=999, y=111)
-        else:
-            self.white_timer_label.configure(text=self.white_timer[:-7])
+                if self.tour % 2 == 0:
+                    self.black_timer = self.current_timer_counting_down(self.black_timer)
+                elif self.tour % 2 == 1:
+                    self.white_timer = self.current_timer_counting_down(self.white_timer)
 
-        if not self.black_timer_label:
-            self.black_timer_label = Label(self.env, text=self.black_timer[:-7], font=("Courier", 44))
-            self.black_timer_label.place(x=999, y=777)
-        else:
-            self.black_timer_label.configure(text=self.black_timer[:-7])
+            if not self.white_timer_label:
+                self.white_timer_label = Label(self.env, text=self.white_timer[:-7], font=("Courier", 44))
+                self.white_timer_label.place(x=999, y=111)
+            else:
+                self.white_timer_label.configure(text=self.white_timer[:-7])
 
-        self.env.after(100, self.timers_set)
+            if not self.black_timer_label:
+                self.black_timer_label = Label(self.env, text=self.black_timer[:-7], font=("Courier", 44))
+                self.black_timer_label.place(x=999, y=777)
+            else:
+                self.black_timer_label.configure(text=self.black_timer[:-7])
+
+            self.env.after(100, self.timers_set)
 
     def current_timer_counting_down(self, timer):
         timer_difference = datetime.datetime.strptime(timer, '%H:%M:%S.%f') - datetime.datetime.strptime('1000', '%f')
@@ -1186,5 +1166,6 @@ class OnlineBoard(Board):
 
 if __name__ == '__main__':
     env = Tk()
+    env.title('ChessReplayer')
     game = GameMenu(env)
     env.mainloop()

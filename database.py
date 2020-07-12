@@ -9,6 +9,19 @@ def connect_to_database(user, password, database):
         print('connection failed')
 
 
+def create_table(cnx):
+    sql = '''
+    CREATE TABLE games(game_id serial, game_pgn varchar(1000), PRIMARY KEY(game_id))
+    '''
+    try:
+        cursor = cnx.cursor()
+        cursor.execute(sql)
+        cnx.commit()
+        cursor.close()
+    except OperationalError:
+        pass
+
+
 def save_game_to_database(game, cnx):
     sql = '''
     INSERT INTO games(game_pgn) VALUES('{}')
